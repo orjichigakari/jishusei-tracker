@@ -1,0 +1,1758 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<title>実習生トラッカー — Jishusei Tracker</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=IBM+Plex+Mono:wght@400;600&display=swap');
+
+:root {
+  --red: #E60012;
+  --red-dark: #b8000e;
+  --red-light: rgba(230,0,18,0.09);
+  --black: #1a1a1a;
+  --gray-dark: #3a3a3a;
+  --gray: #888;
+  --gray-light: #ccc;
+  --gray-bg: #f4f4f4;
+  --white: #ffffff;
+  --border: #e0e0e0;
+  --green: #007a3a;
+  --green-light: rgba(0,140,70,0.09);
+  --bg: #2b2d30;
+  --shadow-sm: 0 1px 4px rgba(0,0,0,0.08);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.14);
+  --shadow-lg: 0 12px 40px rgba(0,0,0,0.2);
+  --header-h: 48px;
+  --toolbar-h: 44px;
+  --subbar-h: 36px;
+  --gakari-h: 36px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; width: 100%; overflow: hidden; font-family: 'Noto Sans JP', sans-serif; font-size: 13px; color: var(--black); background: var(--bg); }
+
+/* ===== HEADER ===== */
+header {
+  height: var(--header-h); background: var(--white);
+  border-bottom: 2px solid var(--red);
+  display: flex; align-items: center; padding: 0 12px; gap: 10px;
+  position: relative; z-index: 100; box-shadow: var(--shadow-sm); flex-shrink: 0;
+}
+.brand { display: flex; align-items: center; gap: 8px; }
+.brand-dot {
+  width: 24px; height: 24px; background: var(--red); border-radius: 4px;
+  display: flex; align-items: center; justify-content: center;
+  color: white; font-size: 11px; font-weight: 700;
+  font-family: 'IBM Plex Mono', monospace; flex-shrink: 0;
+}
+.brand-text { font-size: 13px; font-weight: 700; color: var(--black); line-height: 1.1; }
+.brand-sub { font-size: 8px; color: var(--gray); font-family: 'IBM Plex Mono', monospace; letter-spacing: 0.05em; }
+.header-right { display: flex; align-items: center; gap: 6px; margin-left: auto; }
+.stat-chips { display: flex; gap: 4px; flex-shrink: 0; align-items: center; }
+.chip { padding: 3px 7px; border-radius: 10px; font-size: 10px; font-weight: 700; font-family: 'IBM Plex Mono', monospace; white-space: nowrap; }
+.chip.red { background: var(--red-light); color: var(--red); }
+.chip.green { background: var(--green-light); color: var(--green); }
+.chip.gray { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.4); }
+
+.btn-setting {
+  height: 30px; padding: 0 12px;
+  border: 1.5px solid var(--border); border-radius: 4px;
+  background: var(--gray-bg); color: var(--gray-dark);
+  font-size: 10px; font-weight: 700; font-family: 'IBM Plex Mono', monospace;
+  cursor: pointer; white-space: nowrap; transition: all 0.15s;
+  display: flex; align-items: center; gap: 5px;
+}
+.btn-setting:hover { border-color: var(--red); color: var(--red); background: var(--red-light); }
+.btn-setting.active { background: var(--red); color: white; border-color: var(--red); }
+
+/* ===== TOOLBAR ===== */
+.toolbar {
+  height: var(--toolbar-h); background: var(--white); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; padding: 0 10px; gap: 8px;
+  flex-shrink: 0; box-shadow: var(--shadow-sm); position: relative; z-index: 90;
+}
+.search-wrap { flex: 1; position: relative; }
+.search-wrap input {
+  width: 100%; background: var(--gray-bg); border: 1px solid var(--border);
+  border-radius: 6px; padding: 7px 28px 7px 28px;
+  font-size: 12px; font-family: 'Noto Sans JP', sans-serif;
+  color: var(--black); outline: none; transition: border-color 0.15s;
+}
+.search-wrap input:focus { border-color: var(--red); background: var(--white); }
+.search-wrap input::placeholder { color: var(--gray); }
+.search-icon { position: absolute; left: 9px; top: 50%; transform: translateY(-50%); color: var(--gray); font-size: 13px; pointer-events: none; }
+.search-clear {
+  position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--gray-light); border: none; cursor: pointer;
+  font-size: 10px; color: #666; display: none; align-items: center; justify-content: center;
+  line-height: 1; padding: 0;
+}
+.search-clear.visible { display: flex; }
+.search-clear:hover { background: var(--red); color: white; }
+
+/* ===== SUBBAR ===== */
+.sub-bar {
+  background: var(--white); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center;
+  flex-shrink: 0; min-height: var(--subbar-h); position: relative; z-index: 88;
+}
+.batch-bar {
+  flex: 1; padding: 5px 10px; display: flex; align-items: center; gap: 6px;
+  overflow-x: auto; scrollbar-width: none; min-height: 36px;
+}
+.batch-bar::-webkit-scrollbar { display: none; }
+.batch-bar-label { font-size: 9px; font-weight: 700; color: var(--gray); letter-spacing: 0.1em; text-transform: uppercase; white-space: nowrap; flex-shrink: 0; }
+.bchip {
+  padding: 3px 10px; border-radius: 10px; font-size: 10px; font-weight: 700;
+  font-family: 'IBM Plex Mono', monospace; cursor: pointer; white-space: nowrap;
+  border: 1.5px solid var(--border); background: var(--gray-bg); color: var(--gray-dark);
+  transition: all 0.15s; flex-shrink: 0;
+}
+.bchip:hover { border-color: var(--red); color: var(--red); background: var(--red-light); }
+.bchip.active { border-color: var(--red); color: white; background: var(--red); }
+.bchip-all.active { background: var(--gray-dark); border-color: var(--gray-dark); color: white; }
+
+/* ===== SETTING BAR ===== */
+.setting-bar {
+  display: none; background: #1a1a1e; border-bottom: 1px solid rgba(255,255,255,0.06);
+  padding: 8px 10px; gap: 6px; flex-wrap: wrap; align-items: center;
+  flex-shrink: 0;
+}
+body.setting-mode .setting-bar { display: flex; }
+.sbar-btn {
+  padding: 5px 10px; border-radius: 4px;
+  border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.6); font-size: 10px; font-weight: 700;
+  font-family: 'IBM Plex Mono', monospace; cursor: pointer; white-space: nowrap;
+  transition: all 0.15s; display: flex; align-items: center; gap: 5px;
+}
+.sbar-btn:hover { background: rgba(255,255,255,0.12); color: white; }
+.sbar-btn.sync { border-color: rgba(0,140,70,0.4); color: rgba(0,196,106,0.8); }
+.sbar-btn.sync:hover { background: rgba(0,140,70,0.15); color: #00c46a; border-color: #00c46a; }
+.sbar-btn.danger { border-color: rgba(200,0,12,0.3); color: rgba(230,0,18,0.7); }
+.sbar-btn.danger:hover { background: rgba(200,0,12,0.2); color: var(--red); border-color: var(--red); }
+
+/* ===== BODY ===== */
+.app-body {
+  height: calc(100vh - var(--header-h) - var(--toolbar-h) - var(--subbar-h) - var(--gakari-h) - 31px);
+  overflow-y: auto; overflow-x: hidden;
+  padding: 10px;
+  -webkit-overflow-scrolling: touch;
+}
+body.setting-mode .app-body {
+  height: calc(100vh - var(--header-h) - var(--toolbar-h) - var(--subbar-h) - var(--gakari-h) - 31px - 44px);
+}
+.app-body::-webkit-scrollbar { width: 4px; }
+.app-body::-webkit-scrollbar-track { background: transparent; }
+.app-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 2px; }
+
+/* ===== UNASSIGNED SECTION ===== */
+.unassigned-section {
+  margin-bottom: 10px;
+  background: rgba(80,160,255,0.04);
+  border: 1px solid rgba(80,160,255,0.18);
+  border-radius: 8px; overflow: hidden;
+}
+.unassigned-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 12px; cursor: pointer;
+  background: rgba(60,130,220,0.18);
+  user-select: none; transition: background 0.15s;
+}
+.unassigned-header:hover { background: rgba(60,130,220,0.28); }
+.unassigned-chevron { font-size: 10px; color: rgba(120,180,255,0.7); transition: transform 0.2s; flex-shrink: 0; width: 12px; }
+.unassigned-section.open .unassigned-chevron { transform: rotate(90deg); }
+.unassigned-title { font-size: 12px; font-weight: 700; color: rgba(140,200,255,0.9); font-family: 'IBM Plex Mono', monospace; flex: 1; }
+.unassigned-badge { font-size: 9px; font-family: 'IBM Plex Mono', monospace; padding: 2px 7px; border-radius: 8px; background: rgba(80,160,255,0.12); color: rgba(140,200,255,0.7); }
+.unassigned-body { display: none; padding: 0 8px 8px; }
+.unassigned-section.open .unassigned-body { display: block; }
+
+/* batch group inside unassigned */
+.ua-batch-group { margin-bottom: 8px; }
+.ua-batch-label {
+  font-size: 9px; font-weight: 700; font-family: 'IBM Plex Mono', monospace;
+  color: rgba(140,200,255,0.4); letter-spacing: 0.1em; text-transform: uppercase;
+  padding: 6px 4px 4px; border-bottom: 1px solid rgba(80,160,255,0.1); margin-bottom: 4px;
+}
+
+/* ===== BUILDING CARD ===== */
+.building-card {
+  background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 8px; margin-bottom: 8px;
+  transition: border-color 0.15s;
+}
+.building-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 12px; cursor: pointer;
+  background: #ffffff !important;
+  border-radius: 8px 8px 0 0;
+  user-select: none; transition: background 0.15s;
+  position: sticky; top: -10px;
+  border-bottom: 2px solid var(--red);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  z-index: 10;
+}
+.building-header:hover { background: #f0f0f0 !important; }
+.building-chevron { font-size: 10px; color: #888; transition: transform 0.2s; flex-shrink: 0; width: 12px; }
+.building-card.open .building-chevron { transform: rotate(90deg); }
+.building-icon { font-size: 14px; flex-shrink: 0; }
+.building-name { font-size: 13px; font-weight: 700; color: #1a1a1a; font-family: 'IBM Plex Mono', monospace; flex: 1; }
+.building-progress { font-size: 9px; font-family: 'IBM Plex Mono', monospace; color: #888; white-space: nowrap; }
+.building-progress.done { color: #007a3a; }
+.building-badge { font-size: 9px; font-family: 'IBM Plex Mono', monospace; padding: 2px 7px; border-radius: 8px; background: #f0f0f0; color: #555; white-space: nowrap; }
+.building-body { display: none; padding: 0 8px 8px; }
+.building-card.open .building-body { display: block; }
+.building-edit-actions { display: none; align-items: center; gap: 4px; flex-shrink: 0; }
+body.setting-mode .building-edit-actions { display: flex; }
+/* icon buttons inside white building header need dark color */
+.building-edit-actions .icon-btn { border-color: rgba(0,0,0,0.15); background: rgba(0,0,0,0.05); color: #555; }
+.building-edit-actions .icon-btn:hover { background: rgba(0,0,0,0.1); color: #1a1a1a; }
+.building-edit-actions .icon-btn.danger:hover { background: rgba(200,0,12,0.1); border-color: rgba(200,0,12,0.3); color: var(--red); }
+
+/* ===== ROOM CARD ===== */
+.room-card { background: rgba(255,200,0,0.04); border: 1px solid rgba(255,200,0,0.18); border-radius: 6px; margin-bottom: 6px; overflow: hidden; }
+.room-header { display: flex; align-items: center; gap: 8px; padding: 7px 10px; cursor: pointer; user-select: none; transition: background 0.15s; background: rgba(255,200,0,0.1); }
+.room-header:hover { background: rgba(255,200,0,0.18); }
+.room-chevron { font-size: 9px; color: rgba(200,160,0,0.7); transition: transform 0.2s; flex-shrink: 0; width: 10px; }
+.room-card.open .room-chevron { transform: rotate(90deg); }
+.room-icon { font-size: 11px; flex-shrink: 0; }
+.room-name { font-size: 11px; font-weight: 700; color: rgba(220,180,0,0.9); font-family: 'IBM Plex Mono', monospace; flex: 1; }
+.room-badge { font-size: 9px; font-family: 'IBM Plex Mono', monospace; color: rgba(200,160,0,0.6); white-space: nowrap; }
+.room-body { display: none; padding: 4px 6px 6px; }
+.room-card.open .room-body { display: block; }
+.room-edit-actions { display: none; align-items: center; gap: 4px; flex-shrink: 0; }
+body.setting-mode .room-edit-actions { display: flex; }
+
+/* ===== INTERN ROW ===== */
+.intern-row {
+  position: relative; overflow: hidden;
+  display: flex; align-items: center;
+  height: 44px; border-radius: 5px; margin-bottom: 3px;
+  background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.07);
+  transition: background 0.15s, border-color 0.15s;
+  touch-action: pan-y; user-select: none;
+}
+.intern-row.attended { background: rgba(0,140,70,0.15); border-color: rgba(0,196,106,0.25); }
+.intern-row.unassigned-row { background: rgba(60,130,220,0.08); border-color: rgba(80,160,255,0.18); }
+.intern-row-inner {
+  display: flex; align-items: center; gap: 8px;
+  padding: 0 10px; width: 100%; height: 100%;
+  position: relative; z-index: 1;
+}
+.intern-status-dot {
+  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+  background: rgba(255,255,255,0.15); border: 1.5px solid rgba(255,255,255,0.2);
+  transition: all 0.2s;
+}
+.intern-row.attended .intern-status-dot { background: #00c46a; border-color: #00c46a; box-shadow: 0 0 6px rgba(0,196,106,0.6); }
+.intern-row.unassigned-row .intern-status-dot { background: rgba(80,160,255,0.3); border-color: rgba(80,160,255,0.5); }
+.intern-name { font-size: 12px; color: rgba(255,255,255,0.85); flex: 1; }
+.intern-row.attended .intern-name { color: rgba(255,255,255,0.4); text-decoration: line-through; }
+.intern-batch { font-size: 9px; font-family: 'IBM Plex Mono', monospace; color: rgba(255,255,255,0.25); white-space: nowrap; }
+.intern-row.unassigned-row .intern-batch { color: rgba(255,200,0,0.3); }
+
+/* swipe layers */
+.intern-swipe-bg {
+  position: absolute; inset: 0; display: flex; align-items: center;
+  padding: 0 16px; font-size: 11px; font-weight: 700;
+  font-family: 'IBM Plex Mono', monospace; opacity: 0;
+  pointer-events: none; transition: opacity 0.1s;
+}
+.intern-swipe-bg.right { background: rgba(0,140,70,0.85); color: white; justify-content: flex-start; }
+.intern-swipe-bg.left  { background: rgba(200,0,12,0.85); color: white; justify-content: flex-end; }
+.intern-row.attended .intern-swipe-bg.right { background: rgba(80,80,80,0.85); }
+
+/* setting actions */
+.intern-edit-actions { display: none; align-items: center; gap: 4px; flex-shrink: 0; }
+body.setting-mode .intern-edit-actions { display: flex; }
+
+/* add buttons */
+.add-room-btn, .add-intern-btn {
+  display: none; width: 100%; padding: 7px;
+  border: 1.5px dashed rgba(255,255,255,0.12); border-radius: 5px;
+  background: transparent; color: rgba(255,255,255,0.3);
+  font-size: 10px; font-family: 'IBM Plex Mono', monospace;
+  cursor: pointer; text-align: center; transition: all 0.15s; margin-top: 4px;
+}
+.add-room-btn:hover, .add-intern-btn:hover { border-color: rgba(230,0,18,0.4); color: rgba(230,0,18,0.7); background: var(--red-light); }
+body.setting-mode .add-room-btn, body.setting-mode .add-intern-btn { display: block; }
+
+/* ===== SHIFT BADGE ===== */
+.shift-badge {
+  font-size: 8px; font-weight: 700; font-family: 'IBM Plex Mono', monospace;
+  padding: 1px 5px; border-radius: 3px; white-space: nowrap; flex-shrink: 0;
+}
+.shift-badge.s1 {
+  background: rgba(80,140,255,0.15); color: rgba(120,170,255,0.9);
+  border: 1px solid rgba(80,140,255,0.3);
+}
+.shift-badge.s2 {
+  background: rgba(230,0,18,0.12); color: rgba(255,80,80,0.9);
+  border: 1px solid rgba(230,0,18,0.25);
+}
+
+/* batch chip active blink — REMOVED, now solid */
+.bchip.active { 
+  border-color: var(--red); color: white; background: var(--red);
+  animation: none;
+}
+.bchip-all.active { 
+  background: var(--gray-dark); border-color: var(--gray-dark); color: white;
+  animation: none;
+}
+
+/* intern row blink REMOVED */
+.intern-row.batch-match { } /* no animation */
+
+/* sticky building header */
+.building-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 12px; cursor: pointer;
+  background: #3a3c40;
+  user-select: none; transition: background 0.15s;
+  position: sticky; top: 0; z-index: var(--building-z, 10);
+}
+.building-header:hover { background: #44464a; }
+.gchip {
+  padding: 3px 10px; border-radius: 10px; font-size: 10px; font-weight: 700;
+  font-family: 'IBM Plex Mono', monospace; cursor: pointer; white-space: nowrap;
+  border: 1.5px solid var(--border); background: var(--gray-bg); color: var(--gray-dark);
+  transition: all 0.15s; flex-shrink: 0;
+}
+.gchip.s1 { border-color: rgba(80,140,255,0.35); color: rgba(120,170,255,0.9); background: rgba(80,140,255,0.08); }
+.gchip.s1.active { background: rgba(80,140,255,0.85); border-color: rgba(80,140,255,0.85); color: white; }
+.gchip.s2 { border-color: rgba(230,0,18,0.3); color: rgba(255,80,80,0.9); background: rgba(230,0,18,0.06); }
+.gchip.s2.active { background: rgba(200,0,12,0.85); border-color: rgba(200,0,12,0.85); color: white; }
+
+/* ===== CHECKBOX SELECT ===== */
+.intern-checkbox {
+  width: 18px; height: 18px; border-radius: 4px; flex-shrink: 0;
+  border: 1.5px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.05);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all 0.15s; font-size: 10px; color: white;
+}
+.intern-row.selected .intern-checkbox { background: var(--red); border-color: var(--red); }
+body:not(.select-mode) .intern-checkbox { display: none; }
+body.select-mode .intern-checkbox { display: flex; }
+
+/* done button per row */
+.btn-done-row {
+  height: 26px; padding: 0 8px; border-radius: 4px; flex-shrink: 0;
+  border: 1px solid rgba(0,196,106,0.3); background: rgba(0,140,70,0.1);
+  color: rgba(0,196,106,0.7); font-size: 9px; font-weight: 700;
+  font-family: 'IBM Plex Mono', monospace; cursor: pointer;
+  transition: all 0.15s; white-space: nowrap;
+}
+.btn-done-row:hover { background: rgba(0,140,70,0.3); color: #00c46a; border-color: #00c46a; }
+.intern-row.attended .btn-done-row { background: rgba(80,80,80,0.15); border-color: rgba(255,255,255,0.08); color: rgba(255,255,255,0.25); }
+body.setting-mode .btn-done-row { display: none; }
+body.select-mode .btn-done-row { display: none; }
+
+/* ===== FLOATING ACTION BAR ===== */
+.fab-bar {
+  position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%);
+  background: #1e1f23; border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 12px; padding: 8px 10px;
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: center;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  z-index: 250; transition: bottom 0.25s ease;
+  max-width: calc(100vw - 24px);
+}
+.fab-bar.show { bottom: 12px; }
+.fab-count { font-size: 11px; font-family: 'IBM Plex Mono', monospace; color: rgba(255,255,255,0.5); padding-right: 8px; border-right: 1px solid rgba(255,255,255,0.1); white-space: nowrap; }
+.fab-btn { height: 32px; padding: 0 10px; border-radius: 6px; border: none; font-size: 10px; font-weight: 700; font-family: 'IBM Plex Mono', monospace; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+.fab-btn.done { background: rgba(0,140,70,0.9); color: white; }
+.fab-btn.done:hover { background: #007a3a; }
+.fab-btn.edit { background: rgba(100,140,255,0.15); color: rgba(150,180,255,0.9); border: 1px solid rgba(100,140,255,0.3); }
+.fab-btn.edit:hover { background: rgba(100,140,255,0.3); color: white; }
+.fab-btn.move { background: rgba(255,160,0,0.12); color: rgba(255,190,0,0.9); border: 1px solid rgba(255,160,0,0.25); }
+.fab-btn.move:hover { background: rgba(255,160,0,0.25); color: white; }
+.fab-btn.cancel { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.5); }
+.fab-btn.cancel:hover { background: rgba(255,255,255,0.12); color: white; }
+
+/* select mode toggle in toolbar */
+.btn-select-toggle {
+  height: 28px; padding: 0 12px; border-radius: 4px;
+  border: 1.5px solid var(--border); background: var(--gray-bg);
+  color: var(--gray-dark); font-size: 11px; font-weight: 700;
+  font-family: 'IBM Plex Mono', monospace; cursor: pointer; white-space: nowrap; transition: all 0.15s;
+  flex-shrink: 0;
+}
+.btn-select-toggle:hover { border-color: var(--red); color: var(--red); background: var(--red-light); }
+body.select-mode .btn-select-toggle { background: var(--red); color: white; border-color: var(--red); }
+
+/* attendance filter chips */
+.achip { padding: 3px 10px; border-radius: 10px; font-size: 10px; font-weight: 700; font-family: 'IBM Plex Mono', monospace; cursor: pointer; white-space: nowrap; border: 1.5px solid var(--border); background: var(--gray-bg); color: var(--gray-dark); transition: all 0.15s; flex-shrink: 0; }
+.achip.done-chip { border-color: rgba(0,196,106,0.3); color: rgba(0,196,106,0.7); background: rgba(0,140,70,0.06); }
+.achip.done-chip.active { background: rgba(0,140,70,0.8); border-color: rgba(0,140,70,0.8); color: white; }
+.achip.undone-chip { border-color: rgba(230,0,18,0.3); color: rgba(230,0,18,0.7); background: var(--red-light); }
+.achip.undone-chip.active { background: var(--red); border-color: var(--red); color: white; }
+
+/* icon buttons */
+.icon-btn {
+  width: 24px; height: 24px; border-radius: 4px;
+  border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.5); font-size: 11px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s; flex-shrink: 0;
+}
+.icon-btn:hover { background: rgba(255,255,255,0.15); color: white; }
+.icon-btn.danger:hover { background: rgba(200,0,12,0.5); border-color: rgba(200,0,12,0.6); color: white; }
+
+/* empty */
+.empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; gap: 12px; text-align: center; }
+.empty-icon { font-size: 40px; opacity: 0.4; }
+.empty-text { font-size: 13px; color: rgba(255,255,255,0.3); line-height: 1.6; }
+
+/* ===== MODAL ===== */
+.modal-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.65); z-index: 200;
+  align-items: center; justify-content: center;
+  padding: 20px; backdrop-filter: blur(3px);
+}
+.modal-overlay.open { display: flex; }
+.modal { background: #1e1f23; border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; width: 100%; max-width: 380px; box-shadow: var(--shadow-lg); overflow: visible; display: flex; flex-direction: column; max-height: 90vh; }
+.modal-header { border-radius: 10px 10px 0 0; flex-shrink: 0; }
+.modal-body { overflow-y: auto; flex: 1; }
+.modal-footer { flex-shrink: 0; border-radius: 0 0 10px 10px; }
+.modal-header { padding: 14px 16px; border-bottom: 1px solid rgba(255,255,255,0.07); display: flex; align-items: center; justify-content: space-between; }
+.modal-title { font-size: 13px; font-weight: 700; color: rgba(255,255,255,0.9); }
+.modal-close { width: 24px; height: 24px; border-radius: 4px; border: none; background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.5); cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; }
+.modal-close:hover { background: rgba(255,255,255,0.15); color: white; }
+.modal-body { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.modal-label { font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.4); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 4px; }
+.modal-input { width: 100%; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 6px; padding: 9px 12px; font-size: 13px; font-family: 'Noto Sans JP', sans-serif; color: rgba(255,255,255,0.9); outline: none; transition: border-color 0.15s; }
+.modal-input:focus { border-color: var(--red); }
+.modal-input::placeholder { color: rgba(255,255,255,0.2); }
+.modal-select { width: 100%; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 6px; padding: 9px 12px; font-size: 13px; font-family: 'Noto Sans JP', sans-serif; color: rgba(255,255,255,0.9); outline: none; appearance: none; cursor: pointer; }
+.modal-select option { background: #1e1f23; color: white; }
+.modal-textarea { width: 100%; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 6px; padding: 9px 12px; font-size: 12px; font-family: 'IBM Plex Mono', monospace; color: rgba(255,255,255,0.9); outline: none; resize: vertical; min-height: 100px; line-height: 1.5; transition: border-color 0.15s; }
+.modal-textarea:focus { border-color: var(--red); }
+.modal-textarea::placeholder { color: rgba(255,255,255,0.2); }
+.modal-footer { padding: 12px 16px; border-top: 1px solid rgba(255,255,255,0.07); display: flex; gap: 8px; justify-content: flex-end; }
+.btn-cancel { padding: 8px 16px; border-radius: 5px; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.5); font-size: 12px; font-weight: 700; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all 0.15s; }
+.btn-cancel:hover { background: rgba(255,255,255,0.12); color: white; }
+.btn-confirm { padding: 8px 16px; border-radius: 5px; border: none; background: var(--red); color: white; font-size: 12px; font-weight: 700; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: background 0.15s; }
+.btn-confirm:hover { background: var(--red-dark); }
+.btn-confirm.green-btn { background: var(--green); }
+.btn-confirm.green-btn:hover { background: #005a2a; }
+.modal-hint { font-size: 10px; color: rgba(255,255,255,0.3); line-height: 1.5; font-family: 'IBM Plex Mono', monospace; }
+.confirm-msg { font-size: 13px; color: rgba(255,255,255,0.7); line-height: 1.6; padding: 4px 0; }
+.confirm-msg strong { color: var(--red); }
+
+/* sync result box */
+.sync-result {
+  background: rgba(0,140,70,0.08); border: 1px solid rgba(0,196,106,0.2);
+  border-radius: 6px; padding: 10px 12px; font-size: 11px;
+  font-family: 'IBM Plex Mono', monospace; color: rgba(0,196,106,0.8);
+  line-height: 1.6; display: none;
+}
+.sync-result.visible { display: block; }
+
+/* assign modal — room select with building group */
+.assign-room-list {
+  display: flex; flex-direction: column;
+  max-height: 300px; overflow-y: auto; overflow-x: hidden;
+  border-radius: 6px; border: 1px solid rgba(255,255,255,0.08);
+}
+.assign-building-label {
+  font-size: 10px; font-weight: 700; color: #111; letter-spacing: 0.06em;
+  padding: 7px 12px 5px; text-transform: uppercase;
+  background: #f0f0f0;
+  border-bottom: 1px solid #ddd;
+  position: sticky; top: 0; z-index: 2;
+  margin: 0; flex-shrink: 0;
+}
+.assign-room-btn {
+  padding: 9px 16px; text-align: left; margin: 0; flex-shrink: 0;
+  border: none; border-bottom: 1px solid rgba(255,255,255,0.05);
+  background: rgba(255,255,255,0.05);
+  color: rgba(255,255,255,0.75); font-size: 12px; cursor: pointer;
+  transition: background 0.12s; font-family: 'Noto Sans JP', sans-serif; width: 100%;
+}
+.assign-room-btn:hover { background: rgba(230,0,18,0.18); color: white; }
+
+/* ===== TOAST ===== */
+.toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(60px); background: #1e1f23; border: 1px solid rgba(255,255,255,0.12); border-radius: 20px; padding: 8px 16px; font-size: 11px; font-family: 'IBM Plex Mono', monospace; color: rgba(255,255,255,0.8); white-space: nowrap; z-index: 300; box-shadow: var(--shadow-md); transition: transform 0.25s ease, opacity 0.25s ease; opacity: 0; }
+.toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+/* ===== LOADING ===== */
+.loading-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 500; align-items: center; justify-content: center; flex-direction: column; gap: 12px; }
+.loading-overlay.open { display: flex; }
+.loading-spinner { width: 32px; height: 32px; border-radius: 50%; border: 3px solid rgba(255,255,255,0.1); border-top-color: var(--red); animation: spin 0.7s linear infinite; }
+.loading-text { font-size: 11px; font-family: 'IBM Plex Mono', monospace; color: rgba(255,255,255,0.4); }
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div class="loading-overlay" id="loading-overlay">
+  <div class="loading-spinner"></div>
+  <div class="loading-text" id="loading-text">Memuat data...</div>
+</div>
+
+<!-- HEADER -->
+<header>
+  <div class="brand">
+    <div class="brand-dot" id="brand-dot">実</div>
+    <div>
+      <div class="brand-text">Jishusei Tracker</div>
+      <div class="brand-sub">実習生トラッカー</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="stat-chips">
+      <span class="chip green" id="chip-done">0 ✓</span>
+      <span class="chip red" id="chip-left">0 belum</span>
+      <span class="chip gray" id="chip-unassigned">0 📭</span>
+    </div>
+    <button class="btn-setting" id="btn-setting" onclick="toggleSettingMode()">⚙ Setting</button>
+  </div>
+</header>
+
+<!-- TOOLBAR -->
+<div class="toolbar">
+  <div class="search-wrap">
+    <span class="search-icon">🔍</span>
+    <input type="text" id="search-input" placeholder="Cari nama pemagang..." oninput="onSearchInput()">
+    <button class="search-clear" id="search-clear" onclick="clearSearch()">✕</button>
+  </div>
+  <button class="btn-select-toggle" id="btn-select-toggle" onclick="toggleSelectMode()">☑ Pilih</button>
+</div>
+
+<!-- SUBBAR -->
+<div class="sub-bar">
+  <div class="batch-bar" id="batch-bar">
+    <span class="batch-bar-label">BATCH</span>
+  </div>
+</div>
+
+<!-- GAKARI FILTER BAR -->
+<div class="sub-bar" id="gakari-bar" style="border-top:1px solid rgba(255,255,255,0.04);">
+  <div class="batch-bar">
+    <span class="batch-bar-label">係</span>
+    <span class="gchip" id="gchip-all" onclick="setGakariFilter('all')">Semua</span>
+    <span class="gchip s1" id="gchip-1" onclick="setGakariFilter('1gakari')">1 係</span>
+    <span class="gchip s2" id="gchip-2" onclick="setGakariFilter('2gakari')">2 係</span>
+    <span style="width:1px;height:16px;background:rgba(255,255,255,0.1);flex-shrink:0;margin:0 4px;"></span>
+    <span class="achip" id="achip-all" onclick="setAttFilter('all')">Semua</span>
+    <span class="achip done-chip" id="achip-done" onclick="setAttFilter('done')">✓ Sudah</span>
+    <span class="achip undone-chip" id="achip-undone" onclick="setAttFilter('undone')">✗ Belum</span>
+  </div>
+</div>
+
+<!-- FLOATING ACTION BAR -->
+<div class="fab-bar" id="fab-bar">
+  <span class="fab-count" id="fab-count">0 dipilih</span>
+  <button class="fab-btn done" onclick="bulkDone()">✓ Done</button>
+  <button class="fab-btn edit" onclick="openBulkEdit()">✏️ Edit</button>
+  <button class="fab-btn move" onclick="openBulkMove()">🚪 Pindah</button>
+  <button class="fab-btn delete" onclick="bulkDelete()" style="background:rgba(200,0,12,0.8);color:white;">🗑 Hapus</button>
+  <button class="fab-btn cancel" onclick="clearSelection()">✕</button>
+</div>
+
+<!-- SETTING BAR -->
+<div class="setting-bar">
+  <button class="sbar-btn sync" onclick="openSyncModal()">↻ Sync dari Haichi</button>
+  <button class="sbar-btn" onclick="openModal('modal-add-building')">🏢 + Gedung</button>
+  <button class="sbar-btn" onclick="openBatchImport()">📋 + Import Batch</button>
+  <button class="sbar-btn danger" onclick="confirmResetAttendance()">↺ Reset Absensi</button>
+</div>
+
+<!-- EXPAND/COLLAPSE BAR -->
+<div style="background:#1e1f23;border-bottom:1px solid rgba(255,255,255,0.06);padding:5px 10px;display:flex;gap:6px;flex-shrink:0;">
+  <span style="font-size:9px;font-family:'IBM Plex Mono',monospace;color:rgba(255,255,255,0.3);align-self:center;letter-spacing:0.08em;text-transform:uppercase;flex:1;">GEDUNG</span>
+  <button onclick="expandAll()" style="padding:3px 10px;border-radius:4px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.5);font-size:9px;font-family:'IBM Plex Mono',monospace;cursor:pointer;">▼ Buka Semua</button>
+  <button onclick="collapseAll()" style="padding:3px 10px;border-radius:4px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.5);font-size:9px;font-family:'IBM Plex Mono',monospace;cursor:pointer;">▲ Tutup Semua</button>
+</div>
+
+<!-- APP BODY -->
+<div class="app-body" id="app-body">
+  <div id="unassigned-section-wrap"></div>
+  <div id="building-list"></div>
+  <div class="empty-state" id="empty-state" style="display:none">
+    <div class="empty-icon">🏢</div>
+    <div class="empty-text">Belum ada data.<br>Aktifkan mode Setting lalu sync dari Haichi<br>atau tambah gedung & pemagang manual.</div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- ===== MODALS ===== -->
+
+<!-- Sync Modal -->
+<div class="modal-overlay" id="modal-sync">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">↻ Sync dari Haichi</span>
+      <button class="modal-close" onclick="closeModal('modal-sync')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:12px;color:rgba(255,255,255,0.6);line-height:1.6;">
+        Import nama pemagang dari data Haichi. Pemagang yang sudah ada di tracker tidak akan diduplikasi.
+      </p>
+      <div class="sync-result" id="sync-result"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('modal-sync')">Tutup</button>
+      <button class="btn-confirm green-btn" id="btn-do-sync" onclick="doSync()">↻ Mulai Sync</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Building -->
+<div class="modal-overlay" id="modal-add-building">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">🏢 Tambah Gedung</span>
+      <button class="modal-close" onclick="closeModal('modal-add-building')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div>
+        <div class="modal-label">Nama Gedung / Apato</div>
+        <input class="modal-input" id="input-building-name" placeholder="cth: Apato Sakura" maxlength="60">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('modal-add-building')">Batal</button>
+      <button class="btn-confirm" onclick="addBuilding()">Tambah</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Building -->
+<div class="modal-overlay" id="modal-edit-building">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">✏️ Edit Gedung</span>
+      <button class="modal-close" onclick="closeModal('modal-edit-building')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div>
+        <div class="modal-label">Nama Gedung</div>
+        <input class="modal-input" id="input-edit-building-name" maxlength="60">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('modal-edit-building')">Batal</button>
+      <button class="btn-confirm" onclick="saveEditBuilding()">Simpan</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Room -->
+<div class="modal-overlay" id="modal-add-room">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">🚪 Tambah Kamar</span>
+      <button class="modal-close" onclick="closeModal('modal-add-room')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div>
+        <div class="modal-label">Nama Kamar</div>
+        <input class="modal-input" id="input-room-name" placeholder="cth: Kamar 101" maxlength="60">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('modal-add-room')">Batal</button>
+      <button class="btn-confirm" onclick="addRoom()">Tambah</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Room -->
+<div class="modal-overlay" id="modal-edit-room">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">✏️ Edit Kamar</span>
+      <button class="modal-close" onclick="closeModal('modal-edit-room')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div>
+        <div class="modal-label">Nama Kamar</div>
+        <input class="modal-input" id="input-edit-room-name" maxlength="60">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('modal-edit-room')">Batal</button>
+      <button class="btn-confirm" onclick="saveEditRoom()">Simpan</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Intern (manual) -->
+<div class="modal-overlay" id="modal-add-intern">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">👤 Tambah Pemagang</span>
+      <button class="modal-close" onclick="closeModal('modal-add-intern')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div>
+        <div class="modal-label">Nama Panggilan</div>
+        <input class="modal-input" id="input-intern-name" placeholder="cth: Budi" maxlength="60">
+      </div>
+      <div>
+        <div class="modal-label">Batch</div>
+        <input class="modal-input" id="input-intern-batch" placeholder="cth: 45" maxlength="30">
+      </div>
+      <div>
+        <div class="modal-label">Gakari / Shift</div>
+        <select class="modal-select" id="input-intern-shift">
+          <option value="1gakari">1 係 (Shift 1)</option>
+          <option value="2gakari">2 係 (Shift 2)</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('modal-add-intern')">Batal</button>
+      <button class="btn-confirm" onclick="addIntern()">Tambah</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Intern -->
+<div class="modal-overlay" id="modal-edit-intern">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">✏️ Edit Pemagang</span>
+      <button class="modal-close" onclick="closeModal('modal-edit-intern')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div>
+        <div class="modal-label">Nama Panggilan</div>
+        <input class="modal-input" id="input-edit-intern-name" maxlength="60">
+      </div>
+      <div>
+        <div class="modal-label">Batch</div>
+        <input class="modal-input" id="input-edit-intern-batch" maxlength="30">
+      </div>
+      <div>
+        <div class="modal-label">Gakari / Shift</div>
+        <select class="modal-select" id="input-edit-intern-shift">
+          <option value="1gakari">1 係 (Shift 1)</option>
+          <option value="2gakari">2 係 (Shift 2)</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('modal-edit-intern')">Batal</button>
+      <button class="btn-confirm" onclick="saveEditIntern()">Simpan</button>
+    </div>
+  </div>
+</div>
+
+<!-- Assign Room (for unassigned intern) -->
+<div class="modal-overlay" id="modal-assign-room">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">🚪 Pilih Kamar</span>
+      <button class="modal-close" onclick="closeModal('modal-assign-room')">✕</button>
+    </div>
+    <div style="padding:10px 16px 8px;flex-shrink:0;">
+      <p style="font-size:12px;color:rgba(255,255,255,0.5);" id="assign-intern-label"></p>
+    </div>
+    <div class="assign-room-list" id="assign-room-list" style="margin:0 0 0 0;border-radius:0;border-left:none;border-right:none;"></div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('modal-assign-room')">Batal</button>
+    </div>
+  </div>
+</div>
+
+<!-- Batch Import -->
+<div class="modal-overlay" id="modal-batch-import">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">📋 Import Batch</span>
+      <button class="modal-close" onclick="closeModal('modal-batch-import')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div>
+        <div class="modal-label">Pilih Gedung</div>
+        <select class="modal-select" id="input-import-building" onchange="updateImportRoomSelect()"></select>
+      </div>
+      <div>
+        <div class="modal-label">Pilih Kamar</div>
+        <select class="modal-select" id="input-import-room"></select>
+      </div>
+      <div>
+        <div class="modal-label">Batch</div>
+        <input class="modal-input" id="input-import-batch" placeholder="cth: 45" maxlength="30">
+      </div>
+      <div>
+        <div class="modal-label">Gakari / Shift</div>
+        <select class="modal-select" id="input-import-shift">
+          <option value="1gakari">1 係 (Shift 1)</option>
+          <option value="2gakari">2 係 (Shift 2)</option>
+        </select>
+      </div>
+      <div>
+        <div class="modal-label">Daftar Nama (satu per baris)</div>
+        <textarea class="modal-textarea" id="input-import-names" placeholder="Budi&#10;Siti&#10;Andi&#10;..."></textarea>
+        <div class="modal-hint" style="margin-top:4px;">Nama panggilan saja. Duplikat nama di kamar yang sama akan dilewati.</div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('modal-batch-import')">Batal</button>
+      <button class="btn-confirm green-btn" onclick="doBatchImport()">Import</button>
+    </div>
+  </div>
+</div>
+
+<!-- Bulk Move -->
+<div class="modal-overlay" id="modal-bulk-move">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">🚪 Pindahkan ke Kamar</span>
+      <button class="modal-close" onclick="closeModal('modal-bulk-move')">✕</button>
+    </div>
+    <div style="padding:10px 16px 8px;flex-shrink:0;">
+      <p style="font-size:12px;color:rgba(255,255,255,0.5);" id="bulk-move-label"></p>
+    </div>
+    <div class="assign-room-list" id="bulk-move-room-list" style="margin:0;border-radius:0;border-left:none;border-right:none;"></div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('modal-bulk-move')">Batal</button>
+    </div>
+  </div>
+</div>
+
+<!-- Bulk Edit -->
+<div class="modal-overlay" id="modal-bulk-edit">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">✏️ Edit Pilihan</span>
+      <button class="modal-close" onclick="closeModal('modal-bulk-edit')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:11px;color:rgba(255,255,255,0.4);margin-bottom:4px;" id="bulk-edit-label"></p>
+      <div class="modal-hint" style="margin-bottom:8px;">Kosongkan field yang tidak ingin diubah.</div>
+      <div>
+        <div class="modal-label">Batch (isi untuk update semua)</div>
+        <input class="modal-input" id="input-bulk-batch" placeholder="cth: 45 — kosongkan jika tidak diubah" maxlength="30">
+      </div>
+      <div>
+        <div class="modal-label">Gakari / Shift (isi untuk update semua)</div>
+        <select class="modal-select" id="input-bulk-shift">
+          <option value="">— Tidak diubah —</option>
+          <option value="1gakari">1 係 (Shift 1)</option>
+          <option value="2gakari">2 係 (Shift 2)</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('modal-bulk-edit')">Batal</button>
+      <button class="btn-confirm" onclick="doBulkEdit()">Simpan</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm -->
+<div class="modal-overlay" id="modal-confirm">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="confirm-title">Konfirmasi</span>
+      <button class="modal-close" onclick="closeModal('modal-confirm')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p class="confirm-msg" id="confirm-msg"></p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('modal-confirm')">Batal</button>
+      <button class="btn-confirm" id="confirm-ok-btn" style="background:var(--red)">Ya, lanjutkan</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== CONFIG =====
+const SUPABASE_URL  = 'https://zxecdtzmwaqnkskbelkv.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp4ZWNkdHptd2Fxbmtza2JlbGt2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1Nzk1ODMsImV4cCI6MjA5MDE1NTU4M30.nqAdt5NNQQsV1C0N6pO4Gn4I1m-0mgf513T21vI8mEc';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+// ===== STATE =====
+let S = {
+  buildings: [],
+  rooms: [],
+  housing: [],
+  jiInterns: [],
+  batchFilter: [],
+  gakariFilter: 'all',
+  attFilter: 'all', // 'all' | 'done' | 'undone'
+  selectMode: false,
+  selected: new Set(), // Set of housing IDs
+  settingMode: false,
+  openBuildings: new Set(),
+  openRooms: new Set(),
+  unassignedOpen: true,
+};
+
+// ===== FETCH =====
+async function fetchAll() {
+  showLoading(true, 'Memuat data...');
+  const [b, r, h, ji] = await Promise.all([
+    sb.from('buildings').select('*').order('sort_order'),
+    sb.from('rooms').select('*').order('sort_order'),
+    sb.from('jishusei_housing').select('*, jishusei_interns(id,name,batch)').order('sort_order'),
+    sb.from('jishusei_interns').select('*').order('name'),
+  ]);
+  S.buildings = b.data || [];
+  S.rooms     = r.data || [];
+  S.housing   = (h.data || []).map(row => ({
+    id: row.id, intern_id: row.intern_id, room_id: row.room_id,
+    attended: row.attended, sort_order: row.sort_order,
+    intern: row.jishusei_interns,
+  }));
+  S.jiInterns = ji.data || [];
+  showLoading(false);
+}
+
+// ===== LOADING =====
+function showLoading(v, msg='') {
+  document.getElementById('loading-overlay').classList.toggle('open', v);
+  if(msg) document.getElementById('loading-text').textContent = msg;
+}
+
+// ===== TOAST =====
+let toastTimer;
+function toast(msg, dur=2200) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), dur);
+}
+
+// ===== MODAL =====
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(el => {
+  el.addEventListener('click', e => { if(e.target===el) el.classList.remove('open'); });
+});
+
+// ===== SETTING MODE =====
+function toggleSettingMode() {
+  S.settingMode = !S.settingMode;
+  document.body.classList.toggle('setting-mode', S.settingMode);
+  document.getElementById('btn-setting').classList.toggle('active', S.settingMode);
+  document.getElementById('brand-dot').textContent = S.settingMode ? '⚙' : '実';
+}
+
+// ===== SYNC FROM HAICHI =====
+function openSyncModal() {
+  document.getElementById('sync-result').classList.remove('visible');
+  document.getElementById('sync-result').textContent = '';
+  document.getElementById('btn-do-sync').disabled = false;
+  openModal('modal-sync');
+}
+
+async function doSync() {
+  document.getElementById('btn-do-sync').disabled = true;
+  showLoading(true, 'Membaca data Haichi...');
+
+  // fetch from haichi interns table (JSONB data column)
+  const {data: haichiInterns, error} = await sb.from('interns').select('id, data');
+  showLoading(false);
+
+  if(error) {
+    toast('❌ Gagal baca data Haichi');
+    document.getElementById('btn-do-sync').disabled = false;
+    return;
+  }
+
+  // dedup by nama+batch combo (beda batch = orang berbeda)
+  const existingKeys = new Set(
+    S.jiInterns.map(i => `${i.name.toLowerCase().trim()}__${i.batch||''}`)
+  );
+
+  // filter new ones
+  const toAdd = haichiInterns.filter(h => {
+    const name = h.data?.name;
+    const batch = h.data?.batch || '';
+    const key = `${name?.toLowerCase().trim()}__${batch}`;
+    return name && !existingKeys.has(key);
+  });
+
+  if(toAdd.length === 0) {
+    const el = document.getElementById('sync-result');
+    el.textContent = '✓ Semua pemagang sudah tersync. Tidak ada yang baru.';
+    el.classList.add('visible');
+    document.getElementById('btn-do-sync').disabled = false;
+    return;
+  }
+
+  showLoading(true, `Menambahkan ${toAdd.length} pemagang...`);
+
+  // batch insert
+  const inserts = toAdd.map(h => ({
+    name: h.data.name,
+    batch: h.data.batch || null,
+    shift: h.data.shift === 'shift2' ? '2gakari' : '1gakari',
+  }));
+
+  const {data: inserted, error: e2} = await sb.from('jishusei_interns').insert(inserts).select();
+  showLoading(false);
+
+  if(e2) {
+    toast('❌ Gagal insert: ' + e2.message);
+    document.getElementById('btn-do-sync').disabled = false;
+    return;
+  }
+
+  S.jiInterns = [...S.jiInterns, ...(inserted||[])];
+
+  const el = document.getElementById('sync-result');
+  el.innerHTML = `✓ ${inserted.length} pemagang baru ditambahkan:\n` +
+    inserted.map(i => `  • ${i.name}${i.batch ? ` (Batch ${i.batch})` : ''}`).join('\n');
+  el.classList.add('visible');
+  document.getElementById('btn-do-sync').disabled = false;
+
+  renderAll();
+  toast(`↻ Sync selesai — ${inserted.length} pemagang baru`);
+}
+
+// ===== GAKARI FILTER =====
+function setGakariFilter(val) {
+  S.gakariFilter = val;
+  document.getElementById('gchip-all').classList.toggle('active', val==='all');
+  document.getElementById('gchip-1').classList.toggle('active', val==='1gakari');
+  document.getElementById('gchip-2').classList.toggle('active', val==='2gakari');
+  renderAll();
+}
+
+function matchesGakari(intern) {
+  if(S.gakariFilter === 'all') return true;
+  const shift = intern?.shift || '1gakari';
+  return shift === S.gakariFilter;
+}
+
+// ===== ATTENDANCE FILTER =====
+function setAttFilter(val) {
+  S.attFilter = val;
+  document.getElementById('achip-all').classList.toggle('active', val==='all');
+  document.getElementById('achip-done').classList.toggle('active', val==='done');
+  document.getElementById('achip-undone').classList.toggle('active', val==='undone');
+  renderAll();
+}
+
+// ===== SELECT MODE =====
+function toggleSelectMode() {
+  S.selectMode = !S.selectMode;
+  document.body.classList.toggle('select-mode', S.selectMode);
+  document.getElementById('btn-select-toggle').textContent = S.selectMode ? '✕ Selesai' : '☑ Pilih';
+  if(!S.selectMode) {
+    S.selected.clear();
+    document.getElementById('fab-bar').classList.remove('show');
+  }
+  renderAll();
+}
+
+function clearSelection() {
+  S.selected.clear();
+  document.getElementById('fab-bar').classList.remove('show');
+  document.getElementById('fab-count').textContent = '0 dipilih';
+  document.querySelectorAll('.intern-row.selected').forEach(r => r.classList.remove('selected'));
+  document.querySelectorAll('.intern-checkbox').forEach(c => c.textContent = '');
+}
+
+function toggleSelect(key) {
+  if(S.selected.has(key)) S.selected.delete(key);
+  else S.selected.add(key);
+  const n = S.selected.size;
+  // update FAB
+  const fab = document.getElementById('fab-bar');
+  fab.classList.toggle('show', n > 0);
+  document.getElementById('fab-count').textContent = `${n} dipilih`;
+  // update row UI
+  const row = document.querySelector(`.intern-row[data-selkey="${key}"]`);
+  if(row) {
+    const isSel = S.selected.has(key);
+    row.classList.toggle('selected', isSel);
+    const cb = row.querySelector('.intern-checkbox');
+    if(cb) cb.textContent = isSel ? '✓' : '';
+  }
+}
+
+function updateFab() {
+  const n = S.selected.size;
+  document.getElementById('fab-bar').classList.toggle('show', n > 0 && S.selectMode);
+  document.getElementById('fab-count').textContent = `${n} dipilih`;
+}
+
+// ===== BULK DONE =====
+async function bulkDone() {
+  if(!S.selected.size) return;
+  const housingKeys = [...S.selected].filter(k=>k.startsWith('h:'));
+  if(!housingKeys.length) { toast('Done hanya berlaku untuk yang sudah punya kamar'); return; }
+  const ids = housingKeys.map(k=>k.slice(2));
+  const housing = ids.map(id => S.housing.find(h=>h.id===id)).filter(Boolean);
+  const newVal = housing.some(h=>!h.attended);
+  showLoading(true, 'Updating...');
+  const {error} = await sb.from('jishusei_housing').update({attended: newVal}).in('id', ids);
+  showLoading(false);
+  if(error) return toast('❌ Gagal update');
+  housing.forEach(h => h.attended = newVal);
+  clearSelection();
+  renderAll();
+  toast(newVal ? `✓ ${ids.length} orang ditandai Done` : `↩ ${ids.length} orang dibatalkan`);
+}
+
+// ===== BULK MOVE =====
+function openBulkMove() {
+  if(!S.selected.size) return toast('Pilih dulu nama yang mau dipindah');
+  const n = S.selected.size;
+  document.getElementById('bulk-move-label').textContent = `Pilih kamar tujuan untuk ${n} orang:`;
+  const list = document.getElementById('bulk-move-room-list');
+  list.innerHTML = '';
+  let hasRoom = false;
+  let zIdx = 50;
+  S.buildings.forEach(b => {
+    const rooms = S.rooms.filter(r => r.building_id === b.id)
+      .sort((a,c) => a.name.localeCompare(c.name, 'ja'));
+    if(!rooms.length) return;
+    hasRoom = true;
+    const bHeader = document.createElement('div');
+    bHeader.className = 'assign-building-label';
+    bHeader.style.zIndex = zIdx--;
+    bHeader.textContent = '🏢 ' + b.name;
+    list.appendChild(bHeader);
+    rooms.forEach(r => {
+      const btn = document.createElement('button');
+      btn.className = 'assign-room-btn';
+      btn.textContent = r.name;
+      btn.onclick = () => doBulkMove(r.id);
+      list.appendChild(btn);
+    });
+  });
+  if(!hasRoom) {
+    list.innerHTML = '<p style="font-size:12px;color:rgba(255,255,255,0.3);padding:8px 0;">Belum ada gedung/kamar.</p>';
+  }
+  openModal('modal-bulk-move');
+}
+
+async function doBulkMove(roomId) {
+  showLoading(true, 'Memindahkan...');
+  const maxO = S.housing.filter(h=>h.room_id===roomId).reduce((m,h)=>Math.max(m,h.sort_order),0);
+  let moved = 0;
+
+  for(const key of S.selected) {
+    if(key.startsWith('h:')) {
+      // already assigned — just update room_id
+      const housingId = key.slice(2);
+      const {error} = await sb.from('jishusei_housing').update({room_id: roomId}).eq('id', housingId);
+      if(!error) { const h=S.housing.find(x=>x.id===housingId); if(h) h.room_id=roomId; moved++; }
+    } else if(key.startsWith('i:')) {
+      // unassigned — create new housing row
+      const internId = key.slice(2);
+      const {data, error} = await sb.from('jishusei_housing').insert({
+        intern_id: internId, room_id: roomId, attended: false, sort_order: maxO + moved + 1
+      }).select('*, jishusei_interns(id,name,batch,shift)').single();
+      if(!error && data) { S.housing.push({...data, intern: data.jishusei_interns}); moved++; }
+    }
+  }
+
+  showLoading(false);
+  S.openRooms.add(roomId);
+  closeModal('modal-bulk-move');
+  clearSelection();
+  renderAll();
+  toast(`🚪 ${moved} orang dipindahkan`);
+}
+
+// ===== BULK DELETE =====
+async function bulkDelete() {
+  if(!S.selected.size) return;
+  const n = S.selected.size;
+  showConfirm(`Hapus <strong>${n} orang</strong> yang dipilih? Tindakan ini tidak bisa dibatalkan.`, async () => {
+    showLoading(true, 'Menghapus...');
+    for(const key of S.selected) {
+      if(key.startsWith('h:')) {
+        // remove from housing only (keep in jishusei_interns → goes to unassigned)
+        const housingId = key.slice(2);
+        await sb.from('jishusei_housing').delete().eq('id', housingId);
+        S.housing = S.housing.filter(x=>x.id!==housingId);
+      } else if(key.startsWith('i:')) {
+        // remove from jishusei_interns entirely
+        const internId = key.slice(2);
+        await sb.from('jishusei_interns').delete().eq('id', internId);
+        S.jiInterns = S.jiInterns.filter(x=>x.id!==internId);
+      }
+    }
+    showLoading(false);
+    clearSelection();
+    renderAll();
+    toast(`🗑 ${n} orang dihapus`);
+  });
+}
+
+// ===== BATCH FILTER =====
+function getBatches() {
+  const set = new Set();
+  S.jiInterns.forEach(i => { if(i.batch) set.add(i.batch); });
+  return [...set].sort((a,b) => Number(a)-Number(b) || a.localeCompare(b));
+}
+
+function renderBatchBar() {
+  const bar = document.getElementById('batch-bar');
+  bar.innerHTML = '<span class="batch-bar-label">BATCH</span>';
+  const all = document.createElement('span');
+  all.className = 'bchip bchip-all' + (S.batchFilter.length===0?' active':'');
+  all.textContent = 'Semua';
+  all.onclick = () => { S.batchFilter=[]; renderAll(); };
+  bar.appendChild(all);
+  getBatches().forEach(b => {
+    const c = document.createElement('span');
+    c.className = 'bchip' + (S.batchFilter.includes(b)?' active':'');
+    c.textContent = `${b}`;
+    c.onclick = () => {
+      if(S.batchFilter.includes(b)) S.batchFilter=S.batchFilter.filter(x=>x!==b);
+      else S.batchFilter.push(b);
+      renderAll();
+    };
+    bar.appendChild(c);
+  });
+}
+
+// ===== UNASSIGNED =====
+function getUnassigned() {
+  const assignedInternIds = new Set(S.housing.map(h=>h.intern_id));
+  return S.jiInterns.filter(i => !assignedInternIds.has(i.id));
+}
+
+function filteredUnassigned() {
+  const q = document.getElementById('search-input').value.trim().toLowerCase();
+  return getUnassigned().filter(i => {
+    if(S.batchFilter.length && !S.batchFilter.includes(i.batch)) return false;
+    if(!matchesGakari(i)) return false;
+    if(q && !i.name.toLowerCase().includes(q)) return false;
+    return true;
+  });
+}
+
+// ===== FILTER HOUSING =====
+function filteredHousing() {
+  const q = document.getElementById('search-input').value.trim().toLowerCase();
+  return S.housing.filter(h => {
+    if(!h.intern) return false;
+    if(S.batchFilter.length && !S.batchFilter.includes(h.intern.batch)) return false;
+    if(!matchesGakari(h.intern)) return false;
+    if(S.attFilter === 'done' && !h.attended) return false;
+    if(S.attFilter === 'undone' && h.attended) return false;
+    if(q && !h.intern.name.toLowerCase().includes(q)) return false;
+    return true;
+  });
+}
+
+// ===== RENDER ALL =====
+function renderAll() {
+  renderBatchBar();
+  renderStats();
+  renderUnassigned();
+  renderBuildings();
+}
+
+function renderStats() {
+  const fh = filteredHousing();
+  const done = fh.filter(h=>h.attended).length;
+  const left = fh.length - done;
+  const ua = filteredUnassigned().length;
+  document.getElementById('chip-done').textContent = `${done} ✓`;
+  document.getElementById('chip-left').textContent = `${left} belum`;
+  document.getElementById('chip-unassigned').textContent = `${ua} 📭`;
+}
+
+function renderUnassigned() {
+  const wrap = document.getElementById('unassigned-section-wrap');
+  const ua = filteredUnassigned();
+  if(ua.length === 0) { wrap.innerHTML=''; return; }
+
+  // group by batch
+  const byBatch = {};
+  ua.forEach(i => {
+    const b = i.batch || '–';
+    if(!byBatch[b]) byBatch[b] = [];
+    byBatch[b].push(i);
+  });
+
+  const sec = document.createElement('div');
+  sec.className = 'unassigned-section' + (S.unassignedOpen?' open':'');
+
+  sec.innerHTML = `
+    <div class="unassigned-header" onclick="toggleUnassigned()">
+      <span class="unassigned-chevron">▶</span>
+      <span class="unassigned-title">📭 Belum Ada Kamar</span>
+      <span class="unassigned-badge">${ua.length} orang</span>
+    </div>
+    <div class="unassigned-body" id="unassigned-body"></div>
+  `;
+
+  const body = sec.querySelector('#unassigned-body');
+
+  Object.entries(byBatch).sort((a,b)=>Number(a[0])-Number(b[0])||a[0].localeCompare(b[0])).forEach(([batch, interns]) => {
+    const grp = document.createElement('div');
+    grp.className = 'ua-batch-group';
+    grp.innerHTML = `<div class="ua-batch-label">Batch ${batch}</div>`;
+    interns.forEach(i => {
+      const row = document.createElement('div');
+      const selKey = `i:${i.id}`;
+      const isSel = S.selected.has(selKey);
+      const isBatchMatch = S.batchFilter.length > 0 && S.batchFilter.includes(i.batch);
+      row.className = 'intern-row unassigned-row'+(isSel?' selected':'')+(isBatchMatch?' batch-match':'');
+      row.dataset.selkey = selKey;
+      const isS2 = (i.shift||'1gakari') === '2gakari';
+      row.innerHTML = `
+        <div class="intern-row-inner">
+          <span class="intern-checkbox">${isSel?'✓':''}</span>
+          <span class="intern-status-dot"></span>
+          <span class="intern-name">${esc(i.name)}</span>
+          <span class="shift-badge ${isS2?'s2':'s1'}">${isS2?'2係':'1係'}</span>
+          <span class="intern-batch">${esc(i.batch||'–')}</span>
+          <div class="intern-edit-actions">
+            <button class="icon-btn" title="Assign kamar" onclick="openAssignRoom('${i.id}')">🚪</button>
+            <button class="icon-btn danger" title="Hapus" onclick="confirmDeleteJiIntern('${i.id}')">🗑</button>
+          </div>
+        </div>
+      `;
+      row.addEventListener('click', (e) => {
+        if(!S.selectMode) return;
+        e.stopPropagation();
+        toggleSelect(selKey);
+      });
+      grp.appendChild(row);
+    });
+    body.appendChild(grp);
+  });
+
+  // add intern button for unassigned section
+  if(S.settingMode) {
+    const addBtn = document.createElement('button');
+    addBtn.className = 'add-intern-btn';
+    addBtn.style.display = 'block';
+    addBtn.textContent = '+ Tambah Pemagang Manual';
+    addBtn.onclick = () => { addInternRoomId=null; document.getElementById('input-intern-name').value=''; document.getElementById('input-intern-batch').value=''; openModal('modal-add-intern'); };
+    body.appendChild(addBtn);
+  }
+
+  wrap.innerHTML='';
+  wrap.appendChild(sec);
+}
+
+function toggleUnassigned() {
+  S.unassignedOpen = !S.unassignedOpen;
+  const sec = document.querySelector('.unassigned-section');
+  if(sec) sec.classList.toggle('open', S.unassignedOpen);
+}
+
+// ===== ASSIGN ROOM (unassigned → room) =====
+let assignInternId = null;
+function openAssignRoom(internId) {
+  assignInternId = internId;
+  const intern = S.jiInterns.find(i=>i.id===internId);
+  document.getElementById('assign-intern-label').textContent = `Pilih kamar untuk ${intern?.name}`;
+  const list = document.getElementById('assign-room-list');
+  list.innerHTML = '';
+  let zIdx = 50;
+  S.buildings.forEach(b => {
+    const rooms = S.rooms.filter(r=>r.building_id===b.id)
+      .sort((a,c) => a.name.localeCompare(c.name, 'ja'));
+    if(!rooms.length) return;
+    const blabel = document.createElement('div');
+    blabel.className = 'assign-building-label';
+    blabel.style.zIndex = zIdx--;
+    blabel.textContent = '🏢 ' + b.name;
+    list.appendChild(blabel);
+    rooms.forEach(r => {
+      const btn = document.createElement('button');
+      btn.className = 'assign-room-btn';
+      btn.textContent = r.name;
+      btn.onclick = () => assignToRoom(internId, r.id);
+      list.appendChild(btn);
+    });
+  });
+  if(list.children.length === 0) {
+    list.innerHTML = '<p style="font-size:12px;color:rgba(255,255,255,0.3);">Belum ada gedung/kamar. Tambah dulu via Setting.</p>';
+  }
+  openModal('modal-assign-room');
+}
+
+async function assignToRoom(internId, roomId) {
+  const maxOrder = S.housing.filter(h=>h.room_id===roomId).reduce((m,h)=>Math.max(m,h.sort_order),0);
+  const {data, error} = await sb.from('jishusei_housing').insert({
+    intern_id: internId, room_id: roomId, attended: false, sort_order: maxOrder+1
+  }).select('*, jishusei_interns(id,name,batch)').single();
+  if(error) return toast('❌ Gagal assign: ' + error.message);
+  S.housing.push({...data, intern: data.jishusei_interns});
+  S.openRooms.add(roomId);
+  closeModal('modal-assign-room');
+  renderAll();
+  toast('🚪 Kamar ditetapkan!');
+}
+
+// ===== DELETE jishusei_intern (unassigned) =====
+function confirmDeleteJiIntern(internId) {
+  const i = S.jiInterns.find(x=>x.id===internId);
+  showConfirm(`Hapus <strong>${esc(i?.name)}</strong> dari tracker?`, async () => {
+    const {error} = await sb.from('jishusei_interns').delete().eq('id', internId);
+    if(error) return toast('❌ Gagal hapus');
+    S.jiInterns = S.jiInterns.filter(x=>x.id!==internId);
+    renderAll();
+    toast('🗑 Dihapus');
+  });
+}
+
+// ===== RENDER BUILDINGS =====
+function renderBuildings() {
+  const list = document.getElementById('building-list');
+  const fh = filteredHousing();
+  const fhIds = new Set(fh.map(h=>h.id));
+  const q = document.getElementById('search-input').value.trim();
+  const hasFilter = q || S.batchFilter.length || S.attFilter !== 'all';
+
+  const visibleBuildingIds = new Set();
+  S.buildings.forEach(b => {
+    S.rooms.filter(r=>r.building_id===b.id).forEach(r => {
+      if(S.housing.filter(h=>h.room_id===r.id && fhIds.has(h.id)).length) visibleBuildingIds.add(b.id);
+    });
+  });
+
+  list.innerHTML='';
+  let any = false;
+  let idx = 0;
+
+  const buildingsToRender = (S.settingMode && !hasFilter)
+    ? S.buildings
+    : S.buildings.filter(b => !hasFilter || visibleBuildingIds.has(b.id));
+
+  buildingsToRender.forEach(b => {
+    any = true;
+    // z-index decreases so upper buildings stack over lower ones when sticky
+    list.appendChild(mkBuildingEl(b, fh, 50 - idx));
+    idx++;
+  });
+
+  const noData = !any && filteredUnassigned().length === 0;
+  document.getElementById('empty-state').style.display = noData ? 'flex' : 'none';
+}
+
+function mkBuildingEl(building, fh, zIdx=10) {
+  const rooms = S.rooms.filter(r=>r.building_id===building.id)
+    .sort((a,b) => a.name.localeCompare(b.name, 'ja'));
+  const housingInBuilding = fh.filter(h=>rooms.some(r=>r.id===h.room_id));
+  const doneCount = housingInBuilding.filter(h=>h.attended).length;
+  const totalCount = housingInBuilding.length;
+  const allDone = totalCount > 0 && doneCount === totalCount;
+  const isOpen = S.openBuildings.has(building.id);
+
+  const card = document.createElement('div');
+  card.className = 'building-card'+(isOpen?' open':'');
+  card.dataset.id = building.id;
+  card.innerHTML = `
+    <div class="building-header" onclick="toggleBuilding('${building.id}')" style="z-index:${zIdx};">
+      <span class="building-chevron">▶</span>
+      <span class="building-icon">🏢</span>
+      <span class="building-name">${esc(building.name)}</span>
+      <span class="building-progress${allDone?' done':''}">${totalCount?`${doneCount}/${totalCount}`:'–'}</span>
+      <span class="building-badge">${totalCount} orang</span>
+      <div class="building-edit-actions" onclick="event.stopPropagation()">
+        <button class="icon-btn" onclick="openEditBuilding('${building.id}')">✏️</button>
+        <button class="icon-btn danger" onclick="confirmDeleteBuilding('${building.id}')">🗑</button>
+      </div>
+    </div>
+    <div class="building-body" id="bbody-${building.id}"></div>
+  `;
+  const body = card.querySelector(`#bbody-${building.id}`);
+  rooms.forEach(r => body.appendChild(mkRoomEl(r, fh)));
+  const addRoomBtn = document.createElement('button');
+  addRoomBtn.className = 'add-room-btn';
+  addRoomBtn.textContent = '+ Tambah Kamar';
+  addRoomBtn.onclick = () => openAddRoom(building.id);
+  body.appendChild(addRoomBtn);
+  return card;
+}
+
+function mkRoomEl(room, fh) {
+  const housingInRoom = fh.filter(h=>h.room_id===room.id);
+  const doneCount = housingInRoom.filter(h=>h.attended).length;
+  const isOpen = S.openRooms.has(room.id);
+
+  const card = document.createElement('div');
+  card.className = 'room-card'+(isOpen?' open':'');
+  card.dataset.id = room.id;
+  card.innerHTML = `
+    <div class="room-header" onclick="toggleRoom('${room.id}')">
+      <span class="room-chevron">▶</span>
+      <span class="room-icon">🚪</span>
+      <span class="room-name">${esc(room.name)}</span>
+      <span class="room-badge">${doneCount}/${housingInRoom.length}</span>
+      <div class="room-edit-actions" onclick="event.stopPropagation()">
+        <button class="icon-btn" onclick="openEditRoom('${room.id}')">✏️</button>
+        <button class="icon-btn danger" onclick="confirmDeleteRoom('${room.id}')">🗑</button>
+      </div>
+    </div>
+    <div class="room-body" id="rbody-${room.id}"></div>
+  `;
+  const body = card.querySelector(`#rbody-${room.id}`);
+  housingInRoom.forEach(h => { if(h.intern) body.appendChild(mkInternRow(h)); });
+  const addBtn = document.createElement('button');
+  addBtn.className = 'add-intern-btn';
+  addBtn.textContent = '+ Tambah Pemagang';
+  addBtn.onclick = () => openAddIntern(room.id);
+  body.appendChild(addBtn);
+  return card;
+}
+
+function mkInternRow(housing) {
+  const row = document.createElement('div');
+  const shift = housing.intern.shift || '1gakari';
+  const isS2 = shift === '2gakari';
+  const selKey = `h:${housing.id}`;
+  const isSel = S.selected.has(selKey);
+  const isBatchMatch = S.batchFilter.length > 0 && S.batchFilter.includes(housing.intern.batch);
+  row.className = 'intern-row'+(housing.attended?' attended':'')+(isSel?' selected':'')+(isBatchMatch?' batch-match':'');
+  row.dataset.id = housing.id;
+  row.dataset.selkey = selKey;
+  row.innerHTML = `
+    <div class="intern-swipe-bg right">${housing.attended?'↩ Batal':'✓ Done'}</div>
+    <div class="intern-swipe-bg left">🗑 Hapus</div>
+    <div class="intern-row-inner">
+      <span class="intern-checkbox">${isSel?'✓':''}</span>
+      <span class="intern-status-dot"></span>
+      <span class="intern-name">${esc(housing.intern.name)}</span>
+      <span class="shift-badge ${isS2?'s2':'s1'}">${isS2?'2係':'1係'}</span>
+      <span class="intern-batch">${esc(housing.intern.batch||'–')}</span>
+      <button class="btn-done-row" onclick="event.stopPropagation();toggleAttendanceSingle('${housing.id}')">${housing.attended?'↩ Batal':'✓ Done'}</button>
+      <div class="intern-edit-actions" onclick="event.stopPropagation()">
+        <button class="icon-btn" onclick="openEditIntern('${housing.id}')">✏️</button>
+        <button class="icon-btn danger" onclick="confirmDeleteHousing('${housing.id}')">🗑</button>
+      </div>
+    </div>
+  `;
+  // whole row click in select mode
+  row.addEventListener('click', (e) => {
+    if(!S.selectMode) return;
+    e.stopPropagation();
+    toggleSelect(selKey);
+  });
+  if(!S.selectMode) initSwipe(row, housing);
+  return row;
+}
+
+// ===== SWIPE =====
+function initSwipe(row, housing) {
+  let startX=0,startY=0,dx=0,locked=false,axis=null;
+  const inner=row.querySelector('.intern-row-inner');
+  const bgR=row.querySelector('.intern-swipe-bg.right');
+  const bgL=row.querySelector('.intern-swipe-bg.left');
+  const THRESHOLD=70;
+  function onStart(e){if(S.settingMode)return;const t=e.touches?e.touches[0]:e;startX=t.clientX;startY=t.clientY;dx=0;locked=false;axis=null;}
+  function onMove(e){if(S.settingMode||locked)return;const t=e.touches?e.touches[0]:e;const cx=t.clientX-startX,cy=t.clientY-startY;if(!axis){if(Math.abs(cx)<5&&Math.abs(cy)<5)return;axis=Math.abs(cx)>Math.abs(cy)?'x':'y';}if(axis!=='x')return;e.preventDefault();dx=cx;inner.style.transform=`translateX(${dx}px)`;if(dx>0){bgR.style.opacity=Math.min(dx/THRESHOLD,1);bgL.style.opacity=0;}else{bgL.style.opacity=Math.min(-dx/THRESHOLD,1);bgR.style.opacity=0;}}
+  function onEnd(){if(S.settingMode)return;if(axis!=='x'){inner.style.transform='';return;}if(dx>THRESHOLD){toggleAttendance(housing);locked=true;}else if(dx<-THRESHOLD){confirmDeleteHousing(housing.id);}inner.style.transform='';bgR.style.opacity=0;bgL.style.opacity=0;dx=0;axis=null;}
+  row.addEventListener('touchstart',onStart,{passive:true});
+  row.addEventListener('touchmove',onMove,{passive:false});
+  row.addEventListener('touchend',onEnd);
+}
+
+// ===== ATTENDANCE =====
+async function toggleAttendanceSingle(housingId) {
+  const housing = S.housing.find(h=>h.id===housingId);
+  if(!housing) return;
+  await toggleAttendance(housing);
+}
+
+async function toggleAttendance(housing) {
+  const newVal = !housing.attended;
+  housing.attended = newVal;
+  renderAll();
+  const {error} = await sb.from('jishusei_housing').update({attended:newVal}).eq('id',housing.id);
+  if(error){housing.attended=!newVal;renderAll();toast('❌ Gagal update');}
+  else toast(newVal?'✓ Done':'↩ Dibatalkan');
+}
+
+// ===== SEARCH CLEAR =====
+function onSearchInput() {
+  const val = document.getElementById('search-input').value;
+  document.getElementById('search-clear').classList.toggle('visible', val.length > 0);
+  renderAll();
+}
+function clearSearch() {
+  document.getElementById('search-input').value = '';
+  document.getElementById('search-clear').classList.remove('visible');
+  renderAll();
+}
+
+// ===== BULK EDIT =====
+function openBulkEdit() {
+  if(!S.selected.size) return toast('Pilih dulu nama yang mau diedit');
+  document.getElementById('bulk-edit-label').textContent = `${S.selected.size} orang dipilih`;
+  document.getElementById('input-bulk-batch').value = '';
+  document.getElementById('input-bulk-shift').value = '';
+  openModal('modal-bulk-edit');
+}
+async function doBulkEdit() {
+  const batch = document.getElementById('input-bulk-batch').value.trim();
+  const shift = document.getElementById('input-bulk-shift').value;
+  if(!batch && !shift) return toast('Tidak ada yang diubah');
+
+  const internIds = [];
+  for(const key of S.selected) {
+    if(key.startsWith('h:')) {
+      const h = S.housing.find(x=>x.id===key.slice(2));
+      if(h) internIds.push(h.intern_id);
+    } else if(key.startsWith('i:')) {
+      internIds.push(key.slice(2));
+    }
+  }
+  if(!internIds.length) return toast('Tidak ada yang valid');
+
+  showLoading(true, 'Menyimpan...');
+  const updates = {};
+  if(batch) updates.batch = batch;
+  if(shift) updates.shift = shift;
+
+  const {error} = await sb.from('jishusei_interns').update(updates).in('id', internIds);
+  showLoading(false);
+  if(error) return toast('❌ Gagal: ' + error.message);
+
+  // update local state
+  internIds.forEach(id => {
+    const ji = S.jiInterns.find(x=>x.id===id);
+    if(ji) { if(batch) ji.batch=batch; if(shift) ji.shift=shift; }
+    const h = S.housing.find(x=>x.intern_id===id);
+    if(h?.intern) { if(batch) h.intern.batch=batch; if(shift) h.intern.shift=shift; }
+  });
+
+  closeModal('modal-bulk-edit');
+  clearSelection();
+  renderAll();
+  toast(`✏️ ${internIds.length} orang diperbarui`);
+}
+function expandAll() {
+  S.buildings.forEach(b => S.openBuildings.add(b.id));
+  S.rooms.forEach(r => S.openRooms.add(r.id));
+  S.unassignedOpen = true;
+  renderAll();
+}
+function collapseAll() {
+  S.openBuildings.clear();
+  S.openRooms.clear();
+  S.unassignedOpen = false;
+  renderAll();
+}
+
+// ===== ACCORDION =====
+function toggleBuilding(id){S.openBuildings.has(id)?S.openBuildings.delete(id):S.openBuildings.add(id);const c=document.querySelector(`.building-card[data-id="${id}"]`);if(c)c.classList.toggle('open',S.openBuildings.has(id));}
+function toggleRoom(id){S.openRooms.has(id)?S.openRooms.delete(id):S.openRooms.add(id);const c=document.querySelector(`.room-card[data-id="${id}"]`);if(c)c.classList.toggle('open',S.openRooms.has(id));}
+
+// ===== ADD BUILDING =====
+async function addBuilding(){const name=document.getElementById('input-building-name').value.trim();if(!name)return toast('Nama kosong!');const maxO=S.buildings.reduce((m,b)=>Math.max(m,b.sort_order),0);const{data,error}=await sb.from('buildings').insert({name,sort_order:maxO+1}).select().single();if(error)return toast('❌ '+error.message);S.buildings.push(data);S.openBuildings.add(data.id);closeModal('modal-add-building');document.getElementById('input-building-name').value='';renderAll();toast('🏢 Gedung ditambahkan');}
+
+// ===== EDIT BUILDING =====
+let editBuildingId=null;
+function openEditBuilding(id){editBuildingId=id;const b=S.buildings.find(x=>x.id===id);document.getElementById('input-edit-building-name').value=b.name;openModal('modal-edit-building');}
+async function saveEditBuilding(){const name=document.getElementById('input-edit-building-name').value.trim();if(!name)return toast('Nama kosong!');const{error}=await sb.from('buildings').update({name}).eq('id',editBuildingId);if(error)return toast('❌ '+error.message);S.buildings.find(x=>x.id===editBuildingId).name=name;closeModal('modal-edit-building');renderAll();toast('✏️ Gedung diperbarui');}
+
+// ===== DELETE BUILDING =====
+function confirmDeleteBuilding(id){const b=S.buildings.find(x=>x.id===id);showConfirm(`Hapus gedung <strong>${esc(b.name)}</strong> beserta semua kamar & penghuninya?`,async()=>{const{error}=await sb.from('buildings').delete().eq('id',id);if(error)return toast('❌ '+error.message);S.buildings=S.buildings.filter(x=>x.id!==id);const rids=S.rooms.filter(r=>r.building_id===id).map(r=>r.id);S.rooms=S.rooms.filter(r=>r.building_id!==id);S.housing=S.housing.filter(h=>!rids.includes(h.room_id));renderAll();toast('🗑 Gedung dihapus');});}
+
+// ===== ADD ROOM =====
+let addRoomBuildingId=null;
+function openAddRoom(bid){addRoomBuildingId=bid;document.getElementById('input-room-name').value='';openModal('modal-add-room');}
+async function addRoom(){const name=document.getElementById('input-room-name').value.trim();if(!name)return toast('Nama kosong!');const maxO=S.rooms.filter(r=>r.building_id===addRoomBuildingId).reduce((m,r)=>Math.max(m,r.sort_order),0);const{data,error}=await sb.from('rooms').insert({building_id:addRoomBuildingId,name,sort_order:maxO+1}).select().single();if(error)return toast('❌ '+error.message);S.rooms.push(data);S.openRooms.add(data.id);closeModal('modal-add-room');renderAll();toast('🚪 Kamar ditambahkan');}
+
+// ===== EDIT ROOM =====
+let editRoomId=null;
+function openEditRoom(id){editRoomId=id;const r=S.rooms.find(x=>x.id===id);document.getElementById('input-edit-room-name').value=r.name;openModal('modal-edit-room');}
+async function saveEditRoom(){const name=document.getElementById('input-edit-room-name').value.trim();if(!name)return toast('Nama kosong!');const{error}=await sb.from('rooms').update({name}).eq('id',editRoomId);if(error)return toast('❌ '+error.message);S.rooms.find(x=>x.id===editRoomId).name=name;closeModal('modal-edit-room');renderAll();toast('✏️ Kamar diperbarui');}
+
+// ===== DELETE ROOM =====
+function confirmDeleteRoom(id){const r=S.rooms.find(x=>x.id===id);showConfirm(`Hapus kamar <strong>${esc(r.name)}</strong>?`,async()=>{const{error}=await sb.from('rooms').delete().eq('id',id);if(error)return toast('❌ '+error.message);S.rooms=S.rooms.filter(x=>x.id!==id);S.housing=S.housing.filter(h=>h.room_id!==id);renderAll();toast('🗑 Kamar dihapus');});}
+
+// ===== ADD INTERN (manual, to room OR unassigned) =====
+let addInternRoomId=null;
+function openAddIntern(roomId){addInternRoomId=roomId;document.getElementById('input-intern-name').value='';document.getElementById('input-intern-batch').value='';openModal('modal-add-intern');}
+async function addIntern(){
+  const name=document.getElementById('input-intern-name').value.trim();
+  const batch=document.getElementById('input-intern-batch').value.trim();
+  const shift=document.getElementById('input-intern-shift').value;
+  if(!name)return toast('Nama kosong!');
+  const{data:ji,error:e1}=await sb.from('jishusei_interns').insert({name,batch:batch||null,shift}).select().single();
+  if(e1)return toast('❌ '+e1.message);
+  S.jiInterns.push(ji);
+  if(addInternRoomId){
+    const maxO=S.housing.filter(h=>h.room_id===addInternRoomId).reduce((m,h)=>Math.max(m,h.sort_order),0);
+    const{data:hd,error:e2}=await sb.from('jishusei_housing').insert({intern_id:ji.id,room_id:addInternRoomId,attended:false,sort_order:maxO+1}).select().single();
+    if(e2)return toast('❌ Gagal assign kamar');
+    S.housing.push({...hd,intern:ji});
+    S.openRooms.add(addInternRoomId);
+  }
+  closeModal('modal-add-intern');renderAll();
+  toast(addInternRoomId?'👤 Pemagang ditambahkan ke kamar':'👤 Pemagang ditambahkan (belum ada kamar)');
+}
+
+// ===== EDIT INTERN =====
+let editHousingId=null;
+function openEditIntern(housingId){
+  editHousingId=housingId;
+  const h=S.housing.find(x=>x.id===housingId);
+  document.getElementById('input-edit-intern-name').value=h.intern.name;
+  document.getElementById('input-edit-intern-batch').value=h.intern.batch||'';
+  document.getElementById('input-edit-intern-shift').value=h.intern.shift||'1gakari';
+  openModal('modal-edit-intern');
+}
+async function saveEditIntern(){const h=S.housing.find(x=>x.id===editHousingId);const name=document.getElementById('input-edit-intern-name').value.trim();const batch=document.getElementById('input-edit-intern-batch').value.trim();const shift=document.getElementById('input-edit-intern-shift').value;if(!name)return toast('Nama kosong!');const{error}=await sb.from('jishusei_interns').update({name,batch:batch||null,shift}).eq('id',h.intern_id);if(error)return toast('❌ '+error.message);h.intern.name=name;h.intern.batch=batch||null;h.intern.shift=shift;const ji=S.jiInterns.find(x=>x.id===h.intern_id);if(ji){ji.name=name;ji.batch=batch||null;ji.shift=shift;}closeModal('modal-edit-intern');renderAll();toast('✏️ Data diperbarui');}
+
+// ===== DELETE HOUSING (remove from room, keeps in unassigned) =====
+function confirmDeleteHousing(housingId){const h=S.housing.find(x=>x.id===housingId);showConfirm(`Keluarkan <strong>${esc(h?.intern?.name)}</strong> dari kamar ini?<br><span style="font-size:11px;color:rgba(255,255,255,0.4)">Nama tetap ada di daftar (Belum Ada Kamar).</span>`,async()=>{const{error}=await sb.from('jishusei_housing').delete().eq('id',housingId);if(error)return toast('❌ '+error.message);S.housing=S.housing.filter(x=>x.id!==housingId);renderAll();toast('🚪 Dikeluarkan dari kamar');});}
+
+// ===== BATCH IMPORT =====
+function openBatchImport(){
+  const bSel=document.getElementById('input-import-building');
+  bSel.innerHTML='';
+  S.buildings.forEach(b=>{const o=document.createElement('option');o.value=b.id;o.textContent=b.name;bSel.appendChild(o);});
+  updateImportRoomSelect();
+  openModal('modal-batch-import');
+}
+function updateImportRoomSelect(){const bid=document.getElementById('input-import-building').value;const rSel=document.getElementById('input-import-room');rSel.innerHTML='';S.rooms.filter(r=>r.building_id===bid).forEach(r=>{const o=document.createElement('option');o.value=r.id;o.textContent=r.name;rSel.appendChild(o);});}
+async function doBatchImport(){
+  const roomId=document.getElementById('input-import-room').value;
+  const batch=document.getElementById('input-import-batch').value.trim();
+  const shift=document.getElementById('input-import-shift').value;
+  const names=document.getElementById('input-import-names').value.split('\n').map(n=>n.trim()).filter(Boolean);
+  if(!roomId)return toast('Pilih kamar!');if(!names.length)return toast('Nama kosong!');
+  showLoading(true,'Importing...');
+  let added=0;
+  const maxO=S.housing.filter(h=>h.room_id===roomId).reduce((m,h)=>Math.max(m,h.sort_order),0);
+  for(let i=0;i<names.length;i++){
+    const name=names[i];
+    const{data:ji,error:e1}=await sb.from('jishusei_interns').insert({name,batch:batch||null,shift:shift||'1gakari'}).select().single();
+    if(e1)continue;
+    const{data:hd,error:e2}=await sb.from('jishusei_housing').insert({intern_id:ji.id,room_id:roomId,attended:false,sort_order:maxO+i+1}).select().single();
+    if(e2)continue;
+    S.jiInterns.push(ji);S.housing.push({...hd,intern:ji});added++;
+  }
+  showLoading(false);S.openRooms.add(roomId);closeModal('modal-batch-import');
+  document.getElementById('input-import-names').value='';renderAll();toast(`✅ ${added} pemagang ditambahkan`);
+}
+
+// ===== RESET ATTENDANCE =====
+function confirmResetAttendance(){showConfirm('Reset <strong>semua absensi</strong>? Semua status kembali ke "belum".',async()=>{const{error}=await sb.from('jishusei_housing').update({attended:false}).neq('id','00000000-0000-0000-0000-000000000000');if(error)return toast('❌ Gagal reset');S.housing.forEach(h=>h.attended=false);renderAll();toast('↺ Semua absensi di-reset');});}
+
+// ===== CONFIRM HELPER =====
+function showConfirm(msg,onOk){document.getElementById('confirm-msg').innerHTML=msg;const btn=document.getElementById('confirm-ok-btn');const nb=btn.cloneNode(true);btn.parentNode.replaceChild(nb,btn);nb.onclick=()=>{closeModal('modal-confirm');onOk();};openModal('modal-confirm');}
+
+// ===== UTILS =====
+function esc(str){return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+// ===== INIT =====
+(async function init(){
+  document.getElementById('gchip-all').classList.add('active');
+  document.getElementById('achip-all').classList.add('active');
+  await fetchAll();
+  renderAll();
+})();
+</script>
+</body>
+</html>
