@@ -1652,7 +1652,7 @@ async function addBuilding(){const name=document.getElementById('input-building-
 // ===== EDIT BUILDING =====
 let editBuildingId=null;
 function openEditBuilding(id){editBuildingId=id;const b=S.buildings.find(x=>x.id===id);document.getElementById('input-edit-building-name').value=b.name;openModal('modal-edit-building');}
-async function saveEditBuilding(){const name=document.getElementById('input-edit-building-name').value.trim();if(!name)return toast('Nama kosong!');const{error}=await sb.from('buildings').update({name}).eq('id',editBuildingId);if(error)return toast('❌ '+error.message);S.buildings.find(x=>x.id===editBuildingId).name=name;closeModal('modal-edit-building');renderAll();toast('✏️ Gedung diperbarui');}
+async function saveEditBuilding(){const name=document.getElementById('input-edit-building-name').value.trim();if(!name)return toast('Nama kosong!');const{error}=await sb.from('buildings').update({name}).eq('id',editBuildingId);if(error)return toast('❌ '+error.message);const b=S.buildings.find(x=>x.id===editBuildingId);if(b)b.name=name;closeModal('modal-edit-building');renderAll();toast('✏️ Gedung diperbarui');}
 
 // ===== DELETE BUILDING =====
 function confirmDeleteBuilding(id){const b=S.buildings.find(x=>x.id===id);showConfirm(`Hapus gedung <strong>${esc(b.name)}</strong> beserta semua kamar & penghuninya?`,async()=>{const{error}=await sb.from('buildings').delete().eq('id',id);if(error)return toast('❌ '+error.message);S.buildings=S.buildings.filter(x=>x.id!==id);const rids=S.rooms.filter(r=>r.building_id===id).map(r=>r.id);S.rooms=S.rooms.filter(r=>r.building_id!==id);S.housing=S.housing.filter(h=>!rids.includes(h.room_id));renderAll();toast('🗑 Gedung dihapus');});}
@@ -1665,7 +1665,7 @@ async function addRoom(){const name=document.getElementById('input-room-name').v
 // ===== EDIT ROOM =====
 let editRoomId=null;
 function openEditRoom(id){editRoomId=id;const r=S.rooms.find(x=>x.id===id);document.getElementById('input-edit-room-name').value=r.name;openModal('modal-edit-room');}
-async function saveEditRoom(){const name=document.getElementById('input-edit-room-name').value.trim();if(!name)return toast('Nama kosong!');const{error}=await sb.from('rooms').update({name}).eq('id',editRoomId);if(error)return toast('❌ '+error.message);S.rooms.find(x=>x.id===editRoomId).name=name;closeModal('modal-edit-room');renderAll();toast('✏️ Kamar diperbarui');}
+async function saveEditRoom(){const name=document.getElementById('input-edit-room-name').value.trim();if(!name)return toast('Nama kosong!');const{error}=await sb.from('rooms').update({name}).eq('id',editRoomId);if(error)return toast('❌ '+error.message);const r=S.rooms.find(x=>x.id===editRoomId);if(r)r.name=name;closeModal('modal-edit-room');renderAll();toast('✏️ Kamar diperbarui');}
 
 // ===== DELETE ROOM =====
 function confirmDeleteRoom(id){const r=S.rooms.find(x=>x.id===id);showConfirm(`Hapus kamar <strong>${esc(r.name)}</strong>?`,async()=>{const{error}=await sb.from('rooms').delete().eq('id',id);if(error)return toast('❌ '+error.message);S.rooms=S.rooms.filter(x=>x.id!==id);S.housing=S.housing.filter(h=>h.room_id!==id);renderAll();toast('🗑 Kamar dihapus');});}
@@ -1702,7 +1702,23 @@ function openEditIntern(housingId){
   document.getElementById('input-edit-intern-shift').value=h.intern.shift||'1gakari';
   openModal('modal-edit-intern');
 }
-async function saveEditIntern(){const h=S.housing.find(x=>x.id===editHousingId);const name=document.getElementById('input-edit-intern-name').value.trim();const batch=document.getElementById('input-edit-intern-batch').value.trim();const shift=document.getElementById('input-edit-intern-shift').value;if(!name)return toast('Nama kosong!');const{error}=await sb.from('jishusei_interns').update({name,batch:batch||null,shift}).eq('id',h.intern_id);if(error)return toast('❌ '+error.message);h.intern.name=name;h.intern.batch=batch||null;h.intern.shift=shift;const ji=S.jiInterns.find(x=>x.id===h.intern_id);if(ji){ji.name=name;ji.batch=batch||null;ji.shift=shift;}closeModal('modal-edit-intern');renderAll();toast('✏️ Data diperbarui');}
+async function saveEditIntern(){
+  const h=S.housing.find(x=>x.id===editHousingId);
+  const name=document.getElementById('input-edit-intern-name').value.trim();
+  const batch=document.getElementById('input-edit-intern-batch').value.trim();
+  const shift=document.getElementById('input-edit-intern-shift').value;
+  if(!name)return toast('Nama kosong!');
+  if(!h)return toast('❌ Data tidak ditemukan');
+  const{error}=await sb.from('jishusei_interns').update({name,batch:batch||null,shift}).eq('id',h.intern_id);
+  if(error)return toast('❌ '+error.message);
+  // update local state directly
+  if(h.intern){h.intern.name=name;h.intern.batch=batch||null;h.intern.shift=shift;}
+  const ji=S.jiInterns.find(x=>x.id===h.intern_id);
+  if(ji){ji.name=name;ji.batch=batch||null;ji.shift=shift;}
+  closeModal('modal-edit-intern');
+  renderAll();
+  toast('✏️ Data diperbarui');
+}
 
 // ===== DELETE HOUSING (remove from room, keeps in unassigned) =====
 function confirmDeleteHousing(housingId){const h=S.housing.find(x=>x.id===housingId);showConfirm(`Keluarkan <strong>${esc(h?.intern?.name)}</strong> dari kamar ini?<br><span style="font-size:11px;color:rgba(255,255,255,0.4)">Nama tetap ada di daftar (Belum Ada Kamar).</span>`,async()=>{const{error}=await sb.from('jishusei_housing').delete().eq('id',housingId);if(error)return toast('❌ '+error.message);S.housing=S.housing.filter(x=>x.id!==housingId);renderAll();toast('🚪 Dikeluarkan dari kamar');});}
