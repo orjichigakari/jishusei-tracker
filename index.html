@@ -1062,11 +1062,9 @@ function toggleSelect(key) {
   if(S.selected.has(key)) S.selected.delete(key);
   else S.selected.add(key);
   const n = S.selected.size;
-  // update FAB
   const fab = document.getElementById('fab-bar');
-  fab.classList.toggle('show', n > 0);
+  fab.classList.toggle('show', n > 0 && S.selectMode);
   document.getElementById('fab-count').textContent = `${n} dipilih`;
-  // update row UI
   const row = document.querySelector(`.intern-row[data-selkey="${key}"]`);
   if(row) {
     const isSel = S.selected.has(key);
@@ -1766,6 +1764,9 @@ function esc(str){return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt
 (async function init(){
   document.getElementById('gchip-all').classList.add('active');
   document.getElementById('achip-all').classList.add('active');
+  document.getElementById('fab-bar').classList.remove('show');
+  S.selectMode = false;
+  S.selected.clear();
   await fetchAll();
   renderAll();
 })();
