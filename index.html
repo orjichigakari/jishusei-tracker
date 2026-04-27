@@ -898,7 +898,7 @@ async function fetchAll() {
   const [b, r, h, ji] = await Promise.all([
     sb.from('buildings').select('*').order('sort_order'),
     sb.from('rooms').select('*').order('sort_order'),
-    sb.from('jishusei_housing').select('*, jishusei_interns(id,name,batch)').order('sort_order'),
+    sb.from('jishusei_housing').select('*, jishusei_interns(id,name,batch,shift)').order('sort_order'),
     sb.from('jishusei_interns').select('*').order('name'),
   ]);
   S.buildings = b.data || [];
