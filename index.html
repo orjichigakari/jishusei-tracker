@@ -328,6 +328,7 @@ body.setting-mode .add-room-btn, body.setting-mode .add-intern-btn { display: bl
 .gchip.s1.active { background: rgba(80,140,255,0.85); border-color: rgba(80,140,255,0.85); color: white; }
 .gchip.s2 { border-color: rgba(230,0,18,0.3); color: rgba(255,80,80,0.9); background: rgba(230,0,18,0.06); }
 .gchip.s2.active { background: rgba(200,0,12,0.85); border-color: rgba(200,0,12,0.85); color: white; }
+#gchip-all.active { background: #3a3a3a; border-color: #3a3a3a; color: white; }
 
 /* ===== CHECKBOX SELECT ===== */
 .intern-checkbox {
@@ -387,11 +388,13 @@ body.select-mode .btn-done-row { display: none; }
 body.select-mode .btn-select-toggle { background: var(--red); color: white; border-color: var(--red); }
 
 /* attendance filter chips */
-.achip { padding: 3px 10px; border-radius: 10px; font-size: 10px; font-weight: 700; font-family: 'IBM Plex Mono', monospace; cursor: pointer; white-space: nowrap; border: 1.5px solid var(--border); background: var(--gray-bg); color: var(--gray-dark); transition: all 0.15s; flex-shrink: 0; }
-.achip.done-chip { border-color: rgba(0,196,106,0.3); color: rgba(0,196,106,0.7); background: rgba(0,140,70,0.06); }
-.achip.done-chip.active { background: rgba(0,140,70,0.8); border-color: rgba(0,140,70,0.8); color: white; }
-.achip.undone-chip { border-color: rgba(230,0,18,0.3); color: rgba(230,0,18,0.7); background: var(--red-light); }
-.achip.undone-chip.active { background: var(--red); border-color: var(--red); color: white; }
+/* attendance filter chips */
+.achip { padding: 3px 10px; border-radius: 10px; font-size: 10px; font-weight: 700; font-family: 'IBM Plex Mono', monospace; cursor: pointer; white-space: nowrap; border: 1.5px solid #ccc; background: #f4f4f4; color: #3a3a3a; transition: all 0.15s; flex-shrink: 0; }
+#achip-all.active { background: #3a3a3a; border-color: #3a3a3a; color: white; }
+.achip.done-chip { border-color: rgba(0,196,106,0.4); color: rgba(0,160,80,0.9); background: rgba(0,140,70,0.06); }
+.achip.done-chip.active { background: #007a3a; border-color: #007a3a; color: white; }
+.achip.undone-chip { border-color: rgba(230,0,18,0.3); color: rgba(200,0,12,0.8); background: rgba(230,0,18,0.05); }
+.achip.undone-chip.active { background: #E60012; border-color: #E60012; color: white; }
 
 /* icon buttons */
 .icon-btn {
@@ -488,6 +491,66 @@ body.select-mode .btn-select-toggle { background: var(--red); color: white; bord
 .loading-spinner { width: 32px; height: 32px; border-radius: 50%; border: 3px solid rgba(255,255,255,0.1); border-top-color: var(--red); animation: spin 0.7s linear infinite; }
 .loading-text { font-size: 11px; font-family: 'IBM Plex Mono', monospace; color: rgba(255,255,255,0.4); }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* ===== SUMMARY MODAL ===== */
+.sum-batch-tab {
+  padding: 2px 8px; border-radius: 8px; font-size: 9px; font-weight: 700;
+  font-family: 'IBM Plex Mono', monospace; cursor: pointer; white-space: nowrap;
+  border: 1.5px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.5); transition: all 0.15s;
+}
+.sum-batch-tab.active { background: #E60012; border-color: #E60012; color: white; }
+.sum-header-box { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.sum-batch-label {
+  font-size: 26px; font-weight: 700; font-family: 'IBM Plex Mono', monospace;
+  color: white; line-height: 1.1;
+}
+.sum-total-chips { display: flex; flex-direction: column; gap: 4px; margin-left: auto; }
+.sum-total-chip {
+  font-size: 10px; font-family: 'IBM Plex Mono', monospace;
+  padding: 3px 10px; border-radius: 4px; white-space: nowrap;
+}
+.sum-total-chip.done { background: rgba(0,140,70,0.2); color: #00c46a; }
+.sum-total-chip.undone { background: rgba(230,0,18,0.15); color: rgba(255,100,100,0.9); }
+.sum-bars { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
+.sum-bar-row { display: flex; align-items: center; gap: 8px; }
+.sum-bar-label {
+  font-size: 9px; font-family: 'IBM Plex Mono', monospace;
+  color: rgba(255,255,255,0.4); width: 56px; flex-shrink: 0; text-align: right;
+}
+.sum-bar-track {
+  flex: 1; height: 22px; background: rgba(255,255,255,0.06);
+  border-radius: 4px; overflow: hidden;
+}
+.sum-bar-fill {
+  height: 100%; display: flex; align-items: center; justify-content: flex-end;
+  padding-right: 6px; font-size: 10px; font-weight: 700;
+  font-family: 'IBM Plex Mono', monospace; color: white;
+  min-width: 0; border-radius: 4px; transition: width 0.4s ease;
+}
+.sum-bar-num {
+  font-size: 10px; font-family: 'IBM Plex Mono', monospace;
+  color: rgba(255,255,255,0.5); width: 20px; text-align: right; flex-shrink: 0;
+}
+.sum-section-title {
+  font-size: 9px; font-weight: 700; font-family: 'IBM Plex Mono', monospace;
+  color: rgba(255,255,255,0.3); letter-spacing: 0.1em; text-transform: uppercase;
+  padding: 8px 0 6px; border-top: 1px solid rgba(255,255,255,0.07); margin-top: 4px;
+}
+.sum-name-row {
+  display: flex; gap: 8px; padding: 5px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.05); align-items: flex-start;
+}
+.sum-name-idx { font-size: 9px; font-family: 'IBM Plex Mono', monospace; color: #E60012; width: 14px; flex-shrink: 0; }
+.sum-name-shift {
+  font-size: 9px; font-family: 'IBM Plex Mono', monospace;
+  padding: 1px 5px; border-radius: 3px; flex-shrink: 0;
+}
+.sum-name-shift.s1 { background: rgba(80,140,255,0.15); color: rgba(120,170,255,0.9); }
+.sum-name-shift.s2 { background: rgba(230,0,18,0.12); color: rgba(255,100,100,0.9); }
+.sum-name-count { font-size: 9px; font-family: 'IBM Plex Mono', monospace; color: rgba(255,255,255,0.3); flex-shrink: 0; }
+.sum-names { font-size: 11px; color: rgba(255,255,255,0.75); line-height: 1.5; flex: 1; }
+.sum-empty { font-size: 11px; color: rgba(255,255,255,0.2); font-family: 'IBM Plex Mono', monospace; text-align: center; padding: 20px 0; }
 </style>
 </head>
 <body>
@@ -500,7 +563,7 @@ body.select-mode .btn-select-toggle { background: var(--red); color: white; bord
 <!-- HEADER -->
 <header>
   <div class="brand">
-    <div class="brand-dot" id="brand-dot">実</div>
+    <div class="brand-dot" id="brand-dot" onclick="openSummaryModal()" style="cursor:pointer;">実</div>
     <div>
       <div class="brand-text">Jishusei Tracker</div>
       <div class="brand-sub">実習生トラッカー</div>
@@ -849,6 +912,18 @@ body.select-mode .btn-select-toggle { background: var(--red); color: white; bord
       <button class="btn-cancel" onclick="closeModal('modal-bulk-edit')">Batal</button>
       <button class="btn-confirm" onclick="doBulkEdit()">Simpan</button>
     </div>
+  </div>
+</div>
+
+<!-- Summary Modal -->
+<div class="modal-overlay" id="modal-summary">
+  <div class="modal" style="max-width:440px; max-height:88vh; display:flex; flex-direction:column;">
+    <div class="modal-header" style="flex-shrink:0; flex-wrap:wrap; gap:6px;">
+      <span class="modal-title">📊 Summary</span>
+      <div id="summary-batch-tabs" style="display:flex; gap:4px; flex-wrap:wrap; flex:1; overflow-x:auto; scrollbar-width:none;"></div>
+      <button class="modal-close" onclick="closeModal('modal-summary')">✕</button>
+    </div>
+    <div id="summary-content" style="overflow-y:auto; flex:1; padding:14px 16px;"></div>
   </div>
 </div>
 
@@ -1381,7 +1456,7 @@ async function assignToRoom(internId, roomId) {
   const maxOrder = S.housing.filter(h=>h.room_id===roomId).reduce((m,h)=>Math.max(m,h.sort_order),0);
   const {data, error} = await sb.from('jishusei_housing').insert({
     intern_id: internId, room_id: roomId, attended: false, sort_order: maxOrder+1
-  }).select('*, jishusei_interns(id,name,batch)').single();
+  }).select('*, jishusei_interns(id,name,batch,shift)').single();
   if(error) return toast('❌ Gagal assign: ' + error.message);
   S.housing.push({...data, intern: data.jishusei_interns});
   S.openRooms.add(roomId);
@@ -1764,6 +1839,84 @@ function showConfirm(msg,onOk){document.getElementById('confirm-msg').innerHTML=
 
 // ===== UTILS =====
 function esc(str){return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+// ===== SUMMARY MODAL =====
+let summaryBatch = null;
+
+function openSummaryModal() {
+  if (S.settingMode) return;
+  const batches = [...new Set(S.jiInterns.map(i => i.batch).filter(Boolean))]
+    .sort((a, b) => Number(a) - Number(b) || a.localeCompare(b));
+  if (!batches.length) { toast("Belum ada data intern"); return; }
+  if (!summaryBatch || !batches.includes(summaryBatch)) summaryBatch = batches[0];
+  const tabs = document.getElementById("summary-batch-tabs");
+  tabs.innerHTML = "";
+  batches.forEach(b => {
+    const t = document.createElement("span");
+    t.className = "sum-batch-tab" + (b === summaryBatch ? " active" : "");
+    t.textContent = b;
+    t.onclick = () => { summaryBatch = b; renderSummary(); };
+    tabs.appendChild(t);
+  });
+  renderSummary();
+  openModal("modal-summary");
+}
+
+function renderSummary() {
+  document.querySelectorAll(".sum-batch-tab").forEach(t => {
+    t.classList.toggle("active", t.textContent === summaryBatch);
+  });
+  const content = document.getElementById("summary-content");
+  const batchInterns = S.jiInterns.filter(i => i.batch === summaryBatch);
+  if (!batchInterns.length) {
+    content.innerHTML = '<div class="sum-empty">Tidak ada data untuk batch ini</div>';
+    return;
+  }
+  const stats = { s1done: 0, s1undone: 0, s2done: 0, s2undone: 0 };
+  const undoneS1 = [], undoneS2 = [];
+  batchInterns.forEach(intern => {
+    const h = S.housing.find(x => x.intern_id === intern.id);
+    const isS2 = (intern.shift || "1gakari") === "2gakari";
+    const done = h ? h.attended : false;
+    if (isS2) { done ? stats.s2done++ : stats.s2undone++; if (!done) undoneS2.push(intern.name); }
+    else { done ? stats.s1done++ : stats.s1undone++; if (!done) undoneS1.push(intern.name); }
+  });
+  const totalDone = stats.s1done + stats.s2done;
+  const totalUndone = stats.s1undone + stats.s2undone;
+  const total = batchInterns.length;
+  const maxVal = Math.max(stats.s1undone, stats.s1done, stats.s2undone, stats.s2done, 1);
+  const barRows = [
+    { label: "1係 Belum", val: stats.s1undone, color: "rgba(80,140,255,0.80)" },
+    { label: "1係 Sudah", val: stats.s1done,   color: "rgba(80,140,255,0.30)" },
+    { label: "2係 Belum", val: stats.s2undone, color: "rgba(220,50,50,0.85)"  },
+    { label: "2係 Sudah", val: stats.s2done,   color: "rgba(220,50,50,0.30)"  },
+  ];
+  const barsHTML = barRows.map(r => {
+    const pct = Math.round((r.val / maxVal) * 100);
+    return `<div class="sum-bar-row"><span class="sum-bar-label">${r.label}</span><div class="sum-bar-track"><div class="sum-bar-fill" style="width:${pct}%; background:${r.color};">${r.val > 0 ? r.val : ""}</div></div><span class="sum-bar-num">${r.val}</span></div>`;
+  }).join("");
+  const undoneSections = [
+    { shift: "1係", cls: "s1", names: undoneS1 },
+    { shift: "2係", cls: "s2", names: undoneS2 },
+  ].filter(s => s.names.length > 0);
+  const undoneHTML = undoneSections.length === 0
+    ? '<div class="sum-empty">✓ Semua sudah absensi!</div>'
+    : undoneSections.map((s, i) =>
+        `<div class="sum-name-row"><span class="sum-name-idx">${i + 1}</span><span class="sum-name-shift ${s.cls}">${s.shift}</span><span class="sum-name-count">${s.names.length}人</span><span class="sum-names">${s.names.map(n => esc(n)).join(", ")}</span></div>`
+      ).join("");
+  content.innerHTML = `
+    <div class="sum-header-box">
+      <div class="sum-batch-label">BATCH<br>${summaryBatch}</div>
+      <div class="sum-total-chips">
+        <span class="sum-total-chip done">✓ Sudah ${totalDone}/${total}</span>
+        <span class="sum-total-chip undone">✗ Belum ${totalUndone}/${total}</span>
+      </div>
+    </div>
+    <div class="sum-bars">${barsHTML}</div>
+    <div class="sum-section-title">📋 Summary yang belum</div>
+    ${undoneHTML}
+  `;
+}
 
 // ===== INIT =====
 (async function init(){
